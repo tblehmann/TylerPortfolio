@@ -1,8 +1,10 @@
 
 :root {
-  --bg: #FAFAFA;
+  --bg: #FFFFFF;          /* inner panel / content background (white) */
+  --frame-bg: #F4F2EC;    /* off-white outer page behind the white panel */
   --text: #0A0A0A;
   --accent: #FF2D00;
+  --accent-light: #FF8A75;   /* lighter red used on hover (matches archive hover) */
   --muted: #999999;
   --rule: #E2E2E2;
   --hover-bg: #F2F2F2;
@@ -13,6 +15,15 @@
 
   --nav-h: 72px;
   --pad-x: 48px;
+
+  /* Framed-window layout: off-white panel inset on the white page. */
+  --frame-top: 45px;          /* top gap — the menu lives here */
+  --frame-top-open: 77px;     /* project pages: menu + project nav strip below it */
+  --frame-side: 8px;          /* slight side gaps */
+  --frame-bottom: 8px;        /* slight bottom gap */
+  --frame-radius: 14px;
+  /* Visible height of the project panel (slid down, bottom clipped) for full shots. */
+  --panel-h: calc(100vh - var(--frame-top-open));
 
   --shot-max-w: 1180px;
   --shot-pad-y: clamp(40px, 7vh, 84px);
@@ -34,10 +45,9 @@ html {
 }
 
 body {
-  background: var(--bg);
+  background: var(--frame-bg);
   color: var(--text);
   font-family: var(--font-mono);
-  cursor: none;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -49,9 +59,41 @@ a {
 
 .sections-container {
   position: fixed;
-  inset: 0;
+  top: var(--frame-top);
+  left: var(--frame-side);
+  right: var(--frame-side);
+  bottom: var(--frame-bottom);
   overflow: hidden;
   z-index: 1;
+  background: var(--bg);
+  border: 1px solid rgba(10, 10, 10, 0.10);
+  border-radius: var(--frame-radius);
+  box-shadow: 0 24px 60px -24px rgba(10, 10, 10, 0.22);
+  transition: transform 1.7s var(--ease-out);
+}
+
+/* Project pages slide the whole panel DOWN (GPU transform — no layout/reflow) to
+   uncover the static nav strip behind it. Its bottom edge clips off-screen, which
+   is why there's no bottom gap on project pages. */
+.sections-container.project-open {
+  transform: translateY(calc(var(--frame-top-open) - var(--frame-top)));
+}
+
+
+/* Subtle raised bevel painted over the (opaque) stacked sections. */
+.sections-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 50;
+  box-shadow:
+    inset 0 4px 0 -1px rgba(255, 255, 255, 0.9),   /* top highlight rim */
+    inset 4px 0 0 -1px rgba(255, 255, 255, 0.5),    /* left highlight rim */
+    inset 0 -4px 0 -1px rgba(10, 10, 10, 0.13),      /* bottom shade rim */
+    inset -4px 0 0 -1px rgba(10, 10, 10, 0.08),      /* right shade rim */
+    inset 0 0 0 1px rgba(10, 10, 10, 0.10);          /* crisp edge line */
 }
 
 .page-section {
@@ -128,40 +170,9 @@ a {
 
 #archive .work-images {
 
-  height: calc(100% - 2 * var(--nav-h));
-  margin: var(--nav-h) 0;
+  height: calc(100% - var(--nav-h));
+  margin: var(--nav-h) 0 0;
   position: relative;
-}
-
-.nav-back {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  height: var(--nav-h);
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  color: var(--muted);
-  text-decoration: none;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s var(--ease-out), color 0.25s var(--ease-out);
-}
-
-nav#nav.about-mode .nav-back {
-  opacity: 1;
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-.nav-back:hover {
-  color: var(--accent);
-}
-
-.scroll-line.scroll-line-up {
-  background: linear-gradient(to bottom, var(--muted), transparent);
-  transform-origin: bottom;
 }
 
 .transition-red {
@@ -182,129 +193,25 @@ nav#nav.about-mode .nav-back {
   background-color: #CDD4D1;
 }
 
-.cursor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 32px;
-  height: 32px;
-  pointer-events: none;
-  z-index: 9999;
-  transform: translate(-50%, -50%);
-  will-change: transform;
-  transition: width 0.25s var(--ease-out),
-    height 0.25s var(--ease-out),
-    background 0.25s,
-    border-radius 0.25s;
-}
-
-.cursor-h,
-.cursor-v {
-  position: absolute;
-  background: var(--text);
-  transition: opacity 0.2s, transform 0.2s var(--ease-out);
-}
-
-.cursor-h {
-  width: 100%;
-  height: 1px;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-}
-
-.cursor-v {
-  height: 100%;
-  width: 1px;
-  left: 50%;
-  top: 0;
-  transform: translateX(-50%);
-}
-
-.cursor.hovering {
-  width: 18px;
-  height: 18px;
-  background: var(--accent);
-  border-radius: 50%;
-}
-
-.cursor.hovering .cursor-h,
-.cursor.hovering .cursor-v {
-  opacity: 0;
-}
-
-.cursor.view {
-  width: 58px;
-  height: 58px;
-  background: var(--accent);
-  border-radius: 50%;
-}
-
-.cursor.view .cursor-h,
-.cursor.view .cursor-v {
-  opacity: 0;
-}
-
-.cursor-label {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-size: 0.58rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--bg);
-  opacity: 0;
-  transition: opacity 0.2s var(--ease-out);
-}
-
-.cursor.view .cursor-label {
-  opacity: 1;
-}
-
 nav#nav {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: var(--nav-h);
-  padding: 0 var(--pad-x);
+  height: var(--frame-top);
+  padding: 0 calc(var(--frame-side) + var(--pad-x));
   display: flex;
   align-items: center;
 
-  justify-content: flex-end;
-  background: var(--bg);
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.4s var(--ease-sharp);
+  justify-content: space-between;
+  background: transparent;
   z-index: 200;
 }
 
 .nav-lead {
-  position: absolute;
-  top: 0;
-  left: var(--pad-x);
-  height: var(--nav-h);
+  height: var(--frame-top);
   display: inline-flex;
   align-items: center;
-}
-
-.foot-arrow .scroll-line {
-  height: 34px;
-}
-
-.archive-foot:hover .scroll-line {
-  background: linear-gradient(to bottom, transparent, var(--accent));
-}
-
-.nav-back:hover .scroll-line.scroll-line-up {
-  background: linear-gradient(to bottom, var(--accent), transparent);
-}
-
-nav#nav.scrolled {
-  border-bottom-color: var(--text);
 }
 
 .nav-links {
@@ -313,9 +220,11 @@ nav#nav.scrolled {
   gap: 36px;
 }
 
-.nav-links a:not(.nav-monogram) {
+.nav-links a:not(.nav-monogram),
+.project-foot-link {
   position: relative;
   z-index: 0;
+  color: var(--text);
   font-family: var(--font-mono);
   font-size: 0.82rem;
   letter-spacing: 0.14em;
@@ -323,7 +232,8 @@ nav#nav.scrolled {
   transition: color 0.18s var(--ease-out);
 }
 
-.nav-links a:not(.nav-monogram)::before {
+.nav-links a:not(.nav-monogram)::before,
+.project-foot-link::before {
   content: '';
   position: absolute;
   inset: -7px -12px;
@@ -337,14 +247,25 @@ nav#nav.scrolled {
 }
 
 .nav-links a:not(.nav-monogram):hover,
-.nav-links a:not(.nav-monogram).active {
+.nav-links a:not(.nav-monogram).active,
+.project-foot-link:hover,
+.project-foot-link.active {
   color: var(--bg);
 }
 
 .nav-links a:not(.nav-monogram):hover::before,
-.nav-links a:not(.nav-monogram).active::before {
+.nav-links a:not(.nav-monogram).active::before,
+.project-foot-link:hover::before,
+.project-foot-link.active::before {
   transform: scale(1);
   opacity: 1;
+}
+
+/* Lighter red on hover — but only when NOT selected; the active item keeps full red. */
+.nav-links a:not(.nav-monogram):not(.active):hover::before,
+.nav-monogram:not(.active):hover::before,
+.project-foot-link:not(.active):hover::before {
+  background: var(--accent-light);
 }
 
 .nav-monogram {
@@ -414,52 +335,6 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
               max-width 0.42s var(--ease-out) 0.38s;
 }
 
-.archive-foot {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: var(--nav-h);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  background: var(--bg);
-  border-top: 1px solid var(--text);
-  z-index: 200;
-  opacity: 0;
-  transform: translateY(100%);
-  pointer-events: none;
-  transition: opacity 0.5s var(--ease-out), transform 0.6s var(--ease-sharp);
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.archive-foot.visible {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-.foot-arrow {
-  display: inline-flex;
-  align-items: center;
-}
-
-.foot-label {
-  font-family: var(--font-mono);
-  font-size: 1.64rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  line-height: 1;
-  margin-right: -0.2em;
-  transition: color 0.25s var(--ease-out);
-}
-
-.archive-foot:hover {
-  color: var(--accent);
-}
-
 .reveal {
   opacity: 0;
   transform: translateY(20px);
@@ -473,8 +348,7 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 }
 
 #hero {
-  height: 100vh;
-  min-height: 640px;
+  height: 100%;
   overflow: hidden;
   user-select: none;
 }
@@ -487,29 +361,49 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   pointer-events: none;
 }
 
+/* Idle "rain" canvas, behind each section's content (above its bg, below text/images).
+   Absolute so it stays inside the framed panel rather than the whole viewport. */
+.rain-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@media (max-width: 768px) {
+  .rain-canvas { display: none !important; }
+}
+
 .hero-featured {
   position: absolute;
-  top: calc(var(--nav-h) + 36px);
-  bottom: 56px;
-  right: -7.6vw;
-  width: 44%;
-  display: grid;
-  grid-template-rows: repeat(3, 1fr);
-  gap: 16px;
+  top: calc(var(--frame-top) + 20px);
+  bottom: 40px;
+  right: 32px;
+  width: 38%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   z-index: 1;
 }
 
 .hero-feature {
   position: relative;
+  flex: 1 1 0;
+  min-height: 0;
   overflow: hidden;
-  background-color: var(--hover-bg);
+  border-radius: 6px;   /* subtle rounded corners (the "bevel"), no shadow */
+  background-color: var(--bg);
   pointer-events: auto;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
 
   opacity: 0;
   transform: translateY(28px);
-  transition: opacity 0.4s var(--ease-out), transform 0.45s var(--ease-out),
-    box-shadow 0.4s var(--ease-out);
+  transition: flex-grow 0.8s var(--ease-out), opacity 0.4s var(--ease-out),
+    transform 0.45s var(--ease-out);
 }
 
 #hero.featured-ready .hero-feature { opacity: 1; transform: translateY(0); }
@@ -517,46 +411,66 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 .hero-feature:nth-child(2) { transition-delay: 0.38s; }
 .hero-feature:nth-child(3) { transition-delay: 0.51s; }
 
-#hero.featured-ready .hero-feature.hf-out {
-  opacity: 0;
-  transform: scale(0.94);
-  pointer-events: none;
+/* Hover: grow the hovered card, shrink the rest. Use :has() so the shrink only kicks
+   in once a card is actually hovered — keying off :hover of the container instead would
+   briefly shrink the target card before you reach it (a double animation). */
+.hero-featured:has(.hero-feature:hover) .hero-feature { flex-grow: 0.6; }
+.hero-featured:has(.hero-feature:hover) .hero-feature:hover { flex-grow: 2.4; }
+
+.hero-feature-media {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .hero-feature-img {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Fixed scale (taller than the largest card) so growing the card reveals more of
+     the image instead of re-scaling it (which read as a zoom). */
+  height: 60vh;
   background-size: cover;
   background-position: center;
-  transform: scale(1.16);
-  transition: transform 0.6s var(--ease-out);
 }
 
-.hero-feature:hover .hero-feature-img { transform: scale(1.0); }
-
-.hero-feature:hover {
-  box-shadow: 0 18px 44px -18px rgba(10, 10, 10, 0.28);
+/* Off-white strip under the image: always shows the title (left-aligned); the blurb
+   reveals beneath it when the card is highlighted, growing the strip. */
+.hero-feature-info {
+  flex: 0 0 auto;
+  background: var(--frame-bg);
+  padding: 9px 16px 10px;
 }
 
-.hero-preview {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
+.hero-feature-name {
+  display: block;
+  text-align: left;
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: clamp(1rem, 1.4vw, 1.3rem);
+  letter-spacing: 0.01em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
-.hero-preview-img {
-  position: absolute;
-  background-size: cover;
-  background-position: center;
-  opacity: 0;
-  transform: translateY(18px) scale(0.97);
-  transition: opacity 0.34s var(--ease-out), transform 0.5s var(--ease-out);
+.hero-feature-blurb {
+  max-height: 0;
+  overflow: hidden;
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  transition: max-height 0.8s var(--ease-out), margin-top 0.8s var(--ease-out);
 }
 
-.hero-preview-img.show { opacity: 1; transform: none; }
-
-.hero-preview-img.fit-contain { background-size: contain; background-repeat: no-repeat; }
+.hero-feature:hover .hero-feature-blurb {
+  max-height: 7em;
+  margin-top: 7px;
+}
 
 .hero-content {
   position: absolute;
@@ -569,11 +483,11 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 }
 
 .hero-name {
-  font-family: var(--font-display);
+  font-family: var(--font-condensed);
   font-weight: 700;
-  font-size: clamp(4.5rem, 10.5vw, 12.5rem);
-  line-height: 0.88;
-  letter-spacing: -0.03em;
+  font-size: clamp(5rem, 11.5vw, 14rem);
+  line-height: 1.0;
+  letter-spacing: 0.01em;
   color: var(--text);
   margin-left: -0.04em;
   transition-delay: 0.15s;
@@ -592,7 +506,7 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 }
 
 .hero-role {
-  margin-top: 20px;
+  margin-top: clamp(24px, 2.5vw, 48px);
   min-height: 1.1em;
 }
 
@@ -603,6 +517,27 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   font-weight: 400;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  color: var(--text);
+}
+
+.hero-intro {
+  font-family: var(--font-condensed);
+  font-weight: 400;
+  font-size: clamp(1.8rem, 2.9vw, 2.9rem);
+  line-height: 1.06;
+  letter-spacing: 0;
+  color: var(--text);
+  margin-left: -0.02em;
+  max-width: 20em;
+}
+
+.hero-role-accent {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.hero-strong {
+  font-weight: 700;
   color: var(--text);
 }
 
@@ -622,6 +557,29 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   color: var(--text);
   transition-delay: 0.45s;
   z-index: 3;
+}
+
+/* Only the hero's tags stack with the "Get in touch" title; the about page's
+   tags (same class) stay a simple horizontal row. */
+#hero .hero-tags {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.hero-tags-title {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.hero-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .hero-tags .sep {
@@ -732,9 +690,6 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   color: var(--muted);
 }
 
-#archive {
-  border-top: 1px solid var(--rule);
-}
 
 .work-layout {
   display: grid;
@@ -832,7 +787,6 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   flex-direction: column;
   gap: 3px;
   opacity: 0;
-  transition: opacity 0.5s var(--ease-out);
   pointer-events: none;
 }
 
@@ -884,9 +838,8 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: calc(var(--nav-h) + 48px) var(--pad-x) 100px;
-  border-top: 1px solid var(--rule);
-  min-height: 100vh;
+  padding: 56px var(--pad-x);
+  min-height: 100%;
   overflow: hidden;
 }
 
@@ -1011,13 +964,15 @@ footer {
     --pad-x: 22px;
   }
 
-  .cursor { display: none !important; }
   #dot-grid, #hero-preview { display: none !important; }
   .scroll-indicator { display: none; }
 
   nav#nav {
+    height: var(--nav-h);
     padding: 0 22px;
     justify-content: space-between;
+    gap: 0;
+    background: var(--bg);
   }
   .nav-lead {
     position: static;
@@ -1034,13 +989,18 @@ footer {
     font-size: 0.74rem;
   }
 
+  /* Mobile is full-bleed white — menu/foot text goes dark again. */
+  .nav-monogram,
+  .nav-links a:not(.nav-monogram) {
+    color: var(--text);
+  }
+
   .nav-monogram .ml:not([data-keep]) {
     max-width: 0 !important;
     opacity: 0 !important;
     transform: none !important;
   }
   .nav-monogram .ml-space { max-width: 0 !important; }
-  .nav-back, #archive-foot { display: none !important; }
 
   #hero {
     display: flex;
@@ -1059,6 +1019,7 @@ footer {
   .hero-name { font-size: clamp(2.8rem, 15vw, 5rem); }
   .hero-role { margin-top: 12px; min-height: 0; }
   .hero-role-text { font-size: 0.72rem; }
+  .hero-intro { font-size: clamp(1.5rem, 5.6vw, 2.2rem); line-height: 1.2; }
 
   .hero-featured {
     position: static;
@@ -1070,6 +1031,7 @@ footer {
     gap: 14px;
   }
   .hero-feature {
+    flex: none;
     height: 132px;
     border-radius: 3px;
     background-color: var(--hover-bg);
@@ -1077,6 +1039,11 @@ footer {
     transform: none !important;
     transition-delay: 0s !important;
     box-shadow: none !important;
+  }
+
+  /* Mobile uses the red ::after name label below; hide the desktop info strip. */
+  .hero-feature-info {
+    display: none;
   }
 
   .hero-feature-img {
@@ -1114,9 +1081,7 @@ footer {
     order: 3;
     left: auto;
     bottom: auto;
-    margin-top: 26px;
-    flex-wrap: wrap;
-    row-gap: 6px;
+    margin-top: 24px;
   }
 
   #archive { padding: 0; }
@@ -1152,118 +1117,59 @@ footer {
   }
 }
 
-.project-dots {
+/* Project nav strip — sits statically under the menu, BEHIND the panel (z-index 0
+   vs the panel's 1). It's already in place; the panel smoothly shrinking from the
+   top is what uncovers it (no slide/pop of its own). */
+.project-foot {
   position: fixed;
-  right: 22px;
-  top: 50%;
-  transform: translateY(-50%);
+  left: var(--frame-side);
+  right: var(--frame-side);
+  top: var(--frame-top);
+  height: calc(var(--frame-top-open) - var(--frame-top));
+  padding: 0 var(--pad-x);
   display: flex;
-  flex-direction: column;
-  gap: 14px;
-  z-index: 6;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.35s var(--ease-out);
-}
-
-.project-dots.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.project-dot {
-  appearance: none;
-  width: 9px;
-  height: 9px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: #D5D5D5;
-  cursor: pointer;
-  transition: background 0.25s var(--ease-out), transform 0.25s var(--ease-out);
-}
-
-.project-dot:hover {
-  transform: scale(1.25);
-  background: #FF8A75;
-}
-
-.project-dot.active {
-  background: var(--accent);
-  transform: scale(1.3);
-}
-
-.project-pager {
-  position: fixed;
-  top: calc(var(--nav-h) + 14px);
-  left: var(--pad-x);
-  right: var(--pad-x);
-  display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
-  z-index: 5;
-  opacity: 0;
+  /* Sits behind the panel (z-index 0 vs the panel's 1); the panel sliding down/up is
+     what reveals/covers it, so it must NOT fade — it's there the whole time. Content is
+     centered (not lifted) so the active link's red box clears the panel's top edge and
+     stays fully behind it when covered. */
+  z-index: 0;
   pointer-events: none;
-  transition: opacity 0.35s var(--ease-out);
 }
 
-.project-pager.active {
-  opacity: 1;
-}
-
-.project-pager-link {
+.project-foot.active {
   pointer-events: auto;
+}
+
+/* About reuses the strip just for the Back button — no project list. */
+.project-foot.foot-back-only .project-foot-list {
+  display: none;
+}
+
+/* All projects, on the right of the strip (mirrors Archive/About in the menu); Back
+   holds the left. Tighter than the menu so all seven fit on one row. */
+.project-foot-list {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.project-foot-link {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  color: var(--muted);
-  transition: color 0.2s var(--ease-out);
-}
-
-.project-pager-link.next {
-  text-align: right;
-}
-
-.project-pager-link:hover {
-  color: var(--accent);
-}
-
-.pager-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.pager-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.2em;
+  margin: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--text);
+  white-space: nowrap;
   text-transform: uppercase;
-  color: var(--muted);
 }
 
-.pager-name {
-  font-family: var(--font-condensed);
-  font-weight: 700;
-  font-size: 1.05rem;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  line-height: 1;
-}
-
-.pager-arrow {
-  font-family: var(--font-mono);
-  font-size: 1.1rem;
-  line-height: 1;
-  transition: transform 0.25s var(--ease-out);
-}
-
-.project-pager-link.prev:hover .pager-arrow {
-  transform: translateX(-5px);
-}
-
-.project-pager-link.next:hover .pager-arrow {
-  transform: translateX(5px);
+.project-foot-list .project-foot-link {
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
 }
 
 #project-page {
@@ -1288,15 +1194,15 @@ footer {
 
 #project-page .project-title-block {
   position: sticky;
-  top: calc(var(--nav-h) + 14vh);
+  top: 14vh;
   z-index: 1;
-  margin: calc(var(--nav-h) + 14vh) 0 0 var(--pad-x);
+  margin: 14vh 0 0 var(--pad-x);
   pointer-events: none;
 }
 
 #project-page .project-title {
   display: block;
-  margin: 0;
+  margin: 0 0 0 -0.045em;
   font-family: var(--font-condensed);
   font-weight: 700;
   font-size: clamp(3.2rem, 8.5vw, 12rem);
@@ -1311,7 +1217,7 @@ footer {
 
 #project-page .project-title-sub {
   display: block;
-  margin: 32px 0 0 6px;
+  margin: 32px 0 0 0;
   font-family: var(--font-mono);
   font-size: 0.82rem;
   font-weight: 400;
@@ -1350,11 +1256,11 @@ footer {
 }
 
 #project-page[data-project="raufwerk"] .project-title-block {
-  top: calc(var(--nav-h) + 8vh);
-  margin-top: calc(var(--nav-h) + 8vh);
+  top: 8vh;
+  margin-top: 8vh;
 }
 #project-page[data-project="raufwerk"] .project-meta-row {
-  padding-top: calc(var(--nav-h) + 8vh + clamp(3.2rem, 8.5vw, 12rem) * 0.92 + 40px);
+  padding-top: calc(8vh + clamp(3.2rem, 8.5vw, 12rem) * 0.92 + 40px);
 }
 #project-page[data-project="raufwerk"] .project-blurb {
   font-size: 0.9rem;
@@ -1371,14 +1277,14 @@ footer {
 
 #project-page .project-meta-row {
   margin-top: 80px;
-  min-height: calc(100vh - var(--nav-h));
+  min-height: var(--panel-h);
   display: grid;
 
   grid-template-columns: 1fr 2fr;
   gap: 60px;
 
   align-content: start;
-  padding-top: calc(var(--nav-h) + 14vh + clamp(3.2rem, 8.5vw, 12rem) * 0.92 + 52px);
+  padding-top: calc(14vh + clamp(3.2rem, 8.5vw, 12rem) * 0.92 + 52px);
 }
 
 #project-page .project-type {
@@ -1418,7 +1324,7 @@ footer {
   position: relative;
   z-index: 2;
   width: 100%;
-  height: calc(100vh - var(--nav-h));
+  height: var(--panel-h);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1481,7 +1387,7 @@ footer {
 #project-page .project-shot--levels .level > * {
   flex: 0 0 min(
     calc((100% - (var(--cells, 6) - 1) * var(--gap, 8px)) / var(--cells, 6)),
-    calc((100vh - var(--nav-h) - 48px - (var(--rows, 1) - 1) * var(--gap, 8px)) / var(--rows, 1))
+    calc((var(--panel-h) - 48px - (var(--rows, 1) - 1) * var(--gap, 8px)) / var(--rows, 1))
   );
   aspect-ratio: 1;
   min-width: 0;
@@ -1588,24 +1494,38 @@ footer {
 
 @media (max-width: 768px) {
 
-  .project-dots { display: none !important; }
+  /* No framed window on phones — content goes full-bleed, nav overlaps as before. */
+  .sections-container {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    transition: none;
+  }
+  .sections-container.project-open { transform: none; }
+  .sections-container::after { display: none; }
 
-  .project-pager {
+  /* Project nav as a fixed bar directly under the menu (no panel shrink on mobile,
+     so it overlays on top of the full-bleed panel). */
+  .project-foot {
     top: var(--nav-h);
     left: 0;
     right: 0;
-    height: 42px;
+    height: 44px;
     padding: 0 18px;
-    align-items: center;
     background: var(--bg);
     border-bottom: 1px solid var(--rule);
     z-index: 150;
+    /* No panel slide on mobile, so fade the overlay bar in/out instead. */
+    opacity: 0;
+    transition: opacity 0.25s var(--ease-out);
   }
-  .project-pager-link { gap: 8px; }
-  .pager-text { flex-direction: row; align-items: baseline; gap: 8px; }
-  .pager-eyebrow { display: none; }
-  .pager-name { font-size: 0.8rem; }
-  .pager-arrow { font-size: 1rem; }
+  .project-foot.active { opacity: 1; }
+  .project-foot-list { gap: 14px; overflow-x: auto; }
+  .project-foot-list .project-foot-link { font-size: 0.7rem; color: var(--text); }
 
   #project-page {
     scroll-snap-type: none;
@@ -1711,32 +1631,6 @@ footer {
   padding: calc(var(--nav-h) + 80px) var(--pad-x) 120px;
   max-width: 1400px;
   margin: 0 auto;
-}
-
-.project-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 60px;
-  transition: color 0.2s;
-}
-
-.project-back:hover {
-  color: var(--accent);
-}
-
-.project-back .arrow {
-  display: inline-block;
-  transition: transform 0.3s var(--ease-out);
-}
-
-.project-back:hover .arrow {
-  transform: translateX(-6px);
 }
 
 .project-header {
@@ -1857,4 +1751,3 @@ footer {
   display: block;
   color: inherit;
   text-decoration: none;
-}

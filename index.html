@@ -19,18 +19,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Syne:wght@700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700&family=Syne:wght@700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=118">
+  <link rel="stylesheet" href="style.css?v=193">
 </head>
 
 <body>
-
-  <div class="cursor" id="cursor">
-    <div class="cursor-h"></div>
-    <div class="cursor-v"></div>
-    <span class="cursor-label">View</span>
-  </div>
 
   <nav id="nav">
     <div class="nav-lead">
@@ -40,53 +34,61 @@
       <a href="#archive" data-section="archive">Archive</a>
       <a href="#about" data-section="about">About</a>
     </div>
-
-    <a href="#archive" class="nav-back" data-section="archive">
-      <span class="foot-arrow"><span class="scroll-line scroll-line-up"></span></span>
-      <span class="foot-label">Archive</span>
-    </a>
   </nav>
-
-  <div id="archive-foot" class="archive-foot" aria-hidden="true">
-    <span class="foot-arrow" aria-hidden="true"><span class="scroll-line"></span></span>
-    <span class="foot-label">About</span>
-  </div>
 
   <div class="sections-container">
 
     <section id="hero" class="page-section active">
       <canvas id="dot-grid" aria-hidden="true"></canvas>
 
-      <div class="hero-featured" id="hero-featured" aria-hidden="true">
-        <div class="hero-feature" data-project="hybrid-construction" data-name="Hybrid Construction" data-type="Automation · Assembly"
+      <div class="hero-featured" id="hero-featured">
+        <div class="hero-feature" data-project="hybrid-construction" data-name="Hybrid Construction"
           data-images="HybridConstruction/hybrid-09.webp|HybridConstruction/hybrid-05.webp|HybridConstruction/hybrid-11.webp|HybridConstruction/hybrid-04.webp|HybridConstruction/hybrid-02.webp">
-          <div class="hero-feature-img"></div>
+          <div class="hero-feature-media">
+            <div class="hero-feature-img"></div>
+          </div>
+          <div class="hero-feature-info">
+            <span class="hero-feature-name">Hybrid Construction</span>
+            <p class="hero-feature-blurb">3D-printed concrete and cross-laminated timber, organized by a site-aware design platform.</p>
+          </div>
         </div>
-        <div class="hero-feature" data-project="raufwerk" data-name="RaufWerk" data-type="AI Augmented Design · Product"
+        <div class="hero-feature" data-project="raufwerk" data-name="RaufWerk"
           data-images="RaufWerk/raufwerk-03.webp|RaufWerk/raufwerk-13.webp|RaufWerk/raufwerk-18.webp|RaufWerk/raufwerk-07.webp|RaufWerk/raufwerk-08.webp">
-          <div class="hero-feature-img"></div>
+          <div class="hero-feature-media">
+            <div class="hero-feature-img"></div>
+          </div>
+          <div class="hero-feature-info">
+            <span class="hero-feature-name">RaufWerk</span>
+            <p class="hero-feature-blurb">An AI-augmented design workflow for a Chinatown flagship built around a speculative product.</p>
+          </div>
         </div>
-        <div class="hero-feature" data-project="l-acoustics" data-name="L&#8209;Acoustics" data-type="Spatialized AI · Agential Influencer"
+        <div class="hero-feature" data-project="l-acoustics" data-name="L&#8209;Acoustics"
           data-images="LAccoustic/laccoustic-28.webp|LAccoustic/laccoustic-04.webp|LAccoustic/laccoustic-29.webp|LAccoustic/laccoustic-27.webp|LAccoustic/laccoustic-03.webp">
-          <div class="hero-feature-img"></div>
+          <div class="hero-feature-media">
+            <div class="hero-feature-img"></div>
+          </div>
+          <div class="hero-feature-info">
+            <span class="hero-feature-name">L&#8209;Acoustics</span>
+            <p class="hero-feature-blurb">Agential AI and L-ISA spatial audio turning a bar into a self-aware, performative space.</p>
+          </div>
         </div>
       </div>
-
-      <div class="hero-preview" id="hero-preview" aria-hidden="true"></div>
 
       <div class="hero-content">
-        <h1 class="hero-name reveal"><span class="hero-title-text">Portfolio!</span></h1>
-        <p class="hero-role reveal"><span class="hero-role-text">Tyler Lehmann — Architectural Technologist</span></p>
+        <p class="hero-intro reveal">Hi! I'm Tyler, an <span class="hero-role-accent">architectural technologist</span>, looking to bring emerging <span class="hero-strong">technologies</span> into the <span class="hero-strong">architectural</span> practice.</p>
       </div>
       <div class="hero-tags reveal">
-
-        <a class="hero-email" data-user="tylehmann00" data-domain="gmail.com">email me</a>
-        <span class="sep">·</span>
-        <a href="https://www.linkedin.com/in/tyler-lehmann-0909412b5" target="_blank" rel="noopener">LinkedIn</a>
+        <span class="hero-tags-title">Get in touch</span>
+        <div class="hero-tags-row">
+          <a class="hero-email" data-user="tylehmann00" data-domain="gmail.com">email me</a>
+          <span class="sep">·</span>
+          <a href="https://www.linkedin.com/in/tyler-lehmann-0909412b5" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
       </div>
     </section>
 
     <section id="archive" class="page-section">
+      <canvas class="rain-canvas" aria-hidden="true"></canvas>
       <div class="work-layout">
         <div class="work-left">
           <ul class="work-list">
@@ -210,6 +212,8 @@
     </section>
 
     <section id="about" class="page-section">
+      <canvas class="rain-canvas" aria-hidden="true"></canvas>
+
       <div class="section-header reveal">
         <span class="section-label">About</span>
       </div>
@@ -235,7 +239,7 @@
         </div>
       </div>
 
-      <p class="legal-line reveal">© 2026 Tyler Lehmann. All trademarks and logos are the property of their respective owners.</p>
+      <p class="legal-line reveal">© 2026. All trademarks and logos are the property of their respective owners.</p>
 
       <div class="hero-tags reveal">
         <a class="hero-email" data-user="tylehmann00" data-domain="gmail.com">email me</a>
@@ -244,22 +248,12 @@
       </div>
     </section>
 
-    <nav class="project-dots" id="project-dots" aria-label="Project sections"></nav>
-
     <section id="project-page" class="page-section">
+
+      <canvas class="rain-canvas" aria-hidden="true"></canvas>
 
       <div class="project-snap-anchor" aria-hidden="true"></div>
 
-      <div class="project-pager" id="project-pager" aria-label="Project navigation">
-        <a class="project-pager-link prev" id="project-prev" href="#">
-          <span class="pager-arrow">←</span>
-          <span class="pager-text"><span class="pager-eyebrow">Previous</span><span class="pager-name"></span></span>
-        </a>
-        <a class="project-pager-link next" id="project-next" href="#">
-          <span class="pager-text"><span class="pager-eyebrow">Next</span><span class="pager-name"></span></span>
-          <span class="pager-arrow">→</span>
-        </a>
-      </div>
       <div class="project-title-block">
         <h1 class="project-title" id="project-title-text"></h1>
         <span class="project-title-sub" id="project-title-sub-text"></span>
@@ -272,7 +266,7 @@
           <div class="project-blurb-col">
             <p class="project-blurb" id="project-blurb-text"></p>
             <p class="project-credits" id="project-credits-text"></p>
-            <p class="legal-line">© 2026 Tyler Lehmann. All trademarks and logos are the property of their respective owners.</p>
+            <p class="legal-line">© 2026. All trademarks and logos are the property of their respective owners.</p>
           </div>
         </div>
         <div class="project-gallery" id="project-gallery"></div>
@@ -282,7 +276,12 @@
     <div class="transition-red" id="transition-red"></div>
   </div>
 
-  <script src="script.js?v=137"></script>
+  <nav class="project-foot" id="project-foot" aria-label="Project navigation">
+    <button class="project-foot-link" id="project-back" type="button" aria-label="Back">Back</button>
+    <div class="project-foot-list" id="project-foot-list"></div>
+  </nav>
+
+  <script src="script.js?v=170"></script>
 </body>
 
 </html>

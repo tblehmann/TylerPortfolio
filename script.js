@@ -1,40 +1,19 @@
 
 const IS_MOBILE = window.matchMedia('(max-width: 768px)').matches;
 
-const cursor = document.getElementById('cursor');
-
-if (!IS_MOBILE) {
-
-  let cursorX = 0, cursorY = 0, cursorPending = false;
-  document.addEventListener('mousemove', e => {
-    cursorX = e.clientX;
-    cursorY = e.clientY;
-    if (cursorPending) return;
-    cursorPending = true;
-    requestAnimationFrame(() => {
-      cursorPending = false;
-      cursor.style.transform = 'translate3d(' + cursorX + 'px, ' + cursorY + 'px, 0) translate(-50%, -50%)';
-    });
-  }, { passive: true });
-
-  document.querySelectorAll('a, .card-link, .hero-feature').forEach(el => {
-    el.addEventListener('mouseenter', () => cursor.classList.add('hovering'));
-    el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
-  });
-
-  document.querySelectorAll('.hero-feature').forEach(el => {
-    el.addEventListener('mouseenter', () => cursor.classList.add('view'));
-    el.addEventListener('mouseleave', () => cursor.classList.remove('view'));
-  });
-
-  document.addEventListener('mouseleave', () => { cursor.style.opacity = '0'; });
-  document.addEventListener('mouseenter', () => { cursor.style.opacity = '1'; });
-}
+// ── Idle rain ────────────────────────────────────────────────────────────────
+// Inactivity (ms) before the dot-grid rain begins. Lower this to test (e.g. 5000).
+const IDLE_MS = .2 * 60 * 1000;
+// section id -> { start(), stop(), resize() } for the idle controller to drive.
+const RAIN_FIELDS = {};
 
 const SECTIONS = ['hero', 'archive', 'about'];
 const PUSH_DURATION = 800;
 const PUSH_EASING = 'cubic-bezier(0.76, 0, 0.24, 1)';
 let transitioning = false;
+// Section a project was opened from, so the back arrow can return there.
+// Defaults to 'archive' for deep-links opened straight to a project.
+let projectSourceSection = 'archive';
 
 let dotGridRaf = null;
 let dotGridStart = null;
@@ -51,7 +30,7 @@ const PROJECTS = {
 
       { images: ['HybridConstruction/hybrid-03.mp4', 'HybridConstruction/hybrid-01.webp', 'HybridConstruction/hybrid-02.webp'], cols: 3, rows: 1, cover: true },
 
-      { images: ['HybridConstruction/hybrid-10.webp', 'HybridConstruction/hybrid-07.webp', 'HybridConstruction/hybrid-11.webp', 'HybridConstruction/hybrid-05.webp'], cols: 2, rows: 2 },
+      { images: ['HybridConstruction/hybrid-10.webp', 'HybridConstruction/hybrid-07.webp', 'HybridConstruction/hybrid-11.webp', 'HybridConstruction/hybrid-05.webp'], cols: 2, rows: 2, gap: 0, cover: true },
       'HybridConstruction/hybrid-12.mp4',
       'HybridConstruction/hybrid-06.webp'
     ]
@@ -101,12 +80,14 @@ const PROJECTS = {
         cols: 3, rows: 1, gap: 0, cover: true
       },
 
-      { layout: 'levels', gap: '8px', rows: [
-        { images: ['LAccoustic/laccoustic-05.webp', 'LAccoustic/laccoustic-06.webp', 'LAccoustic/laccoustic-07.webp', 'LAccoustic/laccoustic-08.webp', 'LAccoustic/laccoustic-09.webp'] },
-        { images: ['LAccoustic/laccoustic-10.webp', 'LAccoustic/laccoustic-11.webp', 'LAccoustic/laccoustic-12.webp', 'LAccoustic/laccoustic-13.webp', 'LAccoustic/laccoustic-14.webp'] },
-        { images: ['LAccoustic/laccoustic-15.webp', 'LAccoustic/laccoustic-16.webp', 'LAccoustic/laccoustic-17.webp', 'LAccoustic/laccoustic-18.webp', 'LAccoustic/laccoustic-19.webp'] },
-        { images: ['LAccoustic/laccoustic-20.webp', 'LAccoustic/laccoustic-21.webp', 'LAccoustic/laccoustic-22.webp', 'LAccoustic/laccoustic-23.webp', 'LAccoustic/laccoustic-24.webp'] }
-      ] },
+      {
+        layout: 'levels', gap: '8px', rows: [
+          { images: ['LAccoustic/laccoustic-05.webp', 'LAccoustic/laccoustic-06.webp', 'LAccoustic/laccoustic-07.webp', 'LAccoustic/laccoustic-08.webp', 'LAccoustic/laccoustic-09.webp'] },
+          { images: ['LAccoustic/laccoustic-10.webp', 'LAccoustic/laccoustic-11.webp', 'LAccoustic/laccoustic-12.webp', 'LAccoustic/laccoustic-13.webp', 'LAccoustic/laccoustic-14.webp'] },
+          { images: ['LAccoustic/laccoustic-15.webp', 'LAccoustic/laccoustic-16.webp', 'LAccoustic/laccoustic-17.webp', 'LAccoustic/laccoustic-18.webp', 'LAccoustic/laccoustic-19.webp'] },
+          { images: ['LAccoustic/laccoustic-20.webp', 'LAccoustic/laccoustic-21.webp', 'LAccoustic/laccoustic-22.webp', 'LAccoustic/laccoustic-23.webp', 'LAccoustic/laccoustic-24.webp'] }
+        ]
+      },
       'LAccoustic/laccoustic-25.mp4',
       'LAccoustic/laccoustic-26.mp4'
     ]
@@ -166,127 +147,37 @@ function playOnlyShotVideos(shotEl) {
   page.querySelectorAll('video').forEach(v => {
     if (shotEl && shotEl.contains(v)) {
       const p = v.play();
-      if (p && p.catch) p.catch(() => {});
+      if (p && p.catch) p.catch(() => { });
     } else {
-      try { v.pause(); } catch (e) {}
+      try { v.pause(); } catch (e) { }
     }
   });
 }
 function pauseProjectVideos() {
-  document.querySelectorAll('#project-page video').forEach(v => { try { v.pause(); } catch (e) {} });
+  document.querySelectorAll('#project-page video').forEach(v => { try { v.pause(); } catch (e) { } });
 }
 
-function buildProjectDots(section) {
-  const container = document.getElementById('project-dots');
-  if (!container || !section) return;
+// Play only the shot currently centered in the project viewport (no UI dots —
+// just drives video autoplay as the user scrolls through the gallery).
+function observeProjectShots(section) {
+  if (!section) return;
   if (projectDotsObserver) { projectDotsObserver.disconnect(); projectDotsObserver = null; }
-  container.innerHTML = '';
 
   const targets = [...section.querySelectorAll('.project-hero, .project-meta-row, .project-shot')];
   if (!targets.length) return;
 
-  const dots = targets.map((t, i) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'project-dot' + (i === 0 ? ' active' : '');
-    btn.setAttribute('aria-label', 'Section ' + (i + 1));
-    btn.addEventListener('click', () => {
-      t.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-    container.append(btn);
-    return btn;
-  });
-
   projectDotsObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
-      const idx = targets.indexOf(entry.target);
-      if (idx < 0) return;
-      dots.forEach((d, i) => d.classList.toggle('active', i === idx));
       playOnlyShotVideos(entry.target);
     });
   }, {
     root: section,
-
     rootMargin: '-50% 0px -50% 0px',
     threshold: 0
   });
   targets.forEach(t => projectDotsObserver.observe(t));
 }
-
-(function () {
-  const page = document.getElementById('project-page');
-  if (!page) return;
-  if (IS_MOBILE) return;
-
-  const WINDOW = 55;
-  const LOCK = 340;
-  const REARM = 80;
-  const DUR = 420;
-
-  let acc = 0, deciding = false, locked = false, animating = false, armed = true;
-  let idx = 0, rearmTimer = null;
-
-  function positions() {
-    const cTop = page.getBoundingClientRect().top;
-    const base = page.scrollTop;
-    return [...page.querySelectorAll('.project-snap-anchor, .project-meta-row, .project-shot')].map(el => {
-      const m = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
-      return Math.round(base + el.getBoundingClientRect().top - cTop - m);
-    });
-  }
-  function nearestIndex(p, y) {
-    let best = Infinity, bi = 0;
-    p.forEach((v, i) => { const d = Math.abs(v - y); if (d < best) { best = d; bi = i; } });
-    return bi;
-  }
-  function animateScroll(to, dur) {
-    animating = true;
-    const start = page.scrollTop, delta = to - start, t0 = performance.now();
-    (function frame(t) {
-      const k = Math.min(1, (t - t0) / dur);
-      page.scrollTop = start + delta * (1 - Math.pow(1 - k, 3));
-      if (k < 1) requestAnimationFrame(frame); else animating = false;
-    })(performance.now());
-  }
-  function move(dir, count) {
-    const p = positions();
-    if (!p.length) return;
-    if (!animating) idx = nearestIndex(p, page.scrollTop);
-    const next = Math.max(0, Math.min(p.length - 1, idx + dir * count));
-    if (next === idx) return;
-    idx = next;
-    pauseProjectVideos();
-
-    animateScroll(p[idx], DUR);
-  }
-
-  page.addEventListener('wheel', e => {
-    if (activeSectionId() !== 'project-page') return;
-    e.preventDefault();
-    let d = e.deltaY;
-    if (e.deltaMode === 1) d *= 16;
-    else if (e.deltaMode === 2) d *= page.clientHeight;
-
-    clearTimeout(rearmTimer);
-    rearmTimer = setTimeout(() => { armed = true; }, REARM);
-
-    if (locked || !armed) return;
-    acc += d;
-    if (!deciding) {
-      deciding = true;
-      setTimeout(() => {
-        deciding = false;
-        const dir = Math.sign(acc) || 1;
-        acc = 0;
-        armed = false;
-        locked = true;
-        setTimeout(() => { locked = false; }, LOCK);
-        move(dir, 1);
-      }, WINDOW);
-    }
-  }, { passive: false });
-})();
 
 function activeSection() {
   return document.querySelector('.page-section.active');
@@ -310,7 +201,7 @@ function switchSection(targetId, opts) {
     next.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
     updateNav(targetId);
     next.scrollTop = 0;
-    try { history.replaceState(null, '', '#' + targetId); } catch (e) {}
+    try { history.replaceState(null, '', '#' + targetId); } catch (e) { }
     onSectionEnter(targetId);
     return;
   }
@@ -319,46 +210,36 @@ function switchSection(targetId, opts) {
   const nextIdx = SECTIONS.indexOf(targetId);
   const goingDown = nextIdx > curIdx;
 
-  const isCircle = opts.cx !== undefined && opts.cy !== undefined;
-
-  if (current.id === 'hero' && targetId === 'archive' && !opts.skipHeroTransition && !isCircle) {
-    heroToWorkTransition();
-    return;
-  }
-
   transitioning = true;
+
+  // All section↔section navigation (hero / archive / about) and leaving a project use a
+  // plain crossfade — no red wipe, no slide. (Project paging uses its own wipe elsewhere.)
+  const skipRed = true;
 
   const red = document.getElementById('transition-red');
   const startY = goingDown ? '100%' : '-100%';
 
-  red.style.transition = 'none';
-  red.style.visibility = 'visible';
-  red.style.opacity = '1';
-  red.style.background = '';
-
-  var circleR = 0;
-  if (isCircle) {
-    circleR = Math.ceil(Math.max(
-      Math.hypot(opts.cx, opts.cy),
-      Math.hypot(window.innerWidth - opts.cx, opts.cy),
-      Math.hypot(opts.cx, window.innerHeight - opts.cy),
-      Math.hypot(window.innerWidth - opts.cx, window.innerHeight - opts.cy)
-    ));
-
-    red.style.transform = 'none';
-    red.style.clipPath = 'circle(0px at ' + opts.cx + 'px ' + opts.cy + 'px)';
-  } else {
-
+  if (!skipRed) {
+    red.style.transition = 'none';
+    red.style.visibility = 'visible';
+    red.style.opacity = '1';
+    red.style.background = '';
     red.style.clipPath = 'none';
     red.style.transform = 'translateY(' + startY + ')';
   }
 
-  const pageStartY = isCircle ? '-100%' : startY;
   next.classList.add('push-in');
   next.style.transition = 'none';
-  next.style.transform = 'translateY(' + pageStartY + ')';
+  if (skipRed) {
+    // Leave-project: no section slide. Content crossfades while the panel slides up.
+    next.style.transform = 'none';
+    next.style.opacity = '0';
+  } else {
+    next.style.transform = 'translateY(' + startY + ')';
+  }
 
   current.classList.add('push-out');
+  if (skipRed) current.style.transition = 'none';
 
   void red.offsetHeight;
   void next.offsetHeight;
@@ -371,17 +252,15 @@ function switchSection(targetId, opts) {
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      if (isCircle) {
-        red.style.transition = 'clip-path 1300ms cubic-bezier(0.76, 0, 0.24, 1)';
-        red.style.clipPath = 'circle(' + circleR + 'px at ' + opts.cx + 'px ' + opts.cy + 'px)';
-        setTimeout(() => {
-          next.style.transition = 'transform 1000ms cubic-bezier(0.76, 0, 0.24, 1)';
-          next.style.transform = 'translateY(0)';
-        }, 300);
+      if (skipRed) {
+        // Crossfade the content; the panel slide-up (transform) is driven by updateNav.
+        next.style.transition = 'opacity 850ms ease';
+        next.style.opacity = '1';
+        current.style.transition = 'opacity 850ms ease';
+        current.style.opacity = '0';
       } else {
         red.style.transition = 'transform 1300ms cubic-bezier(0.76, 0, 0.24, 1)';
         red.style.transform = 'translateY(0)';
-
         setTimeout(() => {
           next.style.transition = 'transform 1150ms cubic-bezier(0.76, 0, 0.24, 1)';
           next.style.transform = 'translateY(0)';
@@ -398,21 +277,24 @@ function switchSection(targetId, opts) {
     current.classList.remove('active', 'push-out');
     current.style.transition = '';
     current.style.transform = '';
+    current.style.opacity = '';
 
     next.classList.remove('push-in');
     next.classList.add('active');
     next.style.transition = '';
     next.style.transform = '';
+    next.style.opacity = '';
 
     red.style.cssText = 'visibility:hidden;opacity:0;';
 
     transitioning = false;
-    try { history.replaceState(null, '', '#' + targetId); } catch (e) {}
+    try { history.replaceState(null, '', '#' + targetId); } catch (e) { }
     onSectionEnter(targetId);
   }
 
   next.addEventListener('transitionend', function handler(e) {
-    if (e.target !== next || e.propertyName !== 'transform') return;
+    if (e.target !== next) return;
+    if (e.propertyName !== 'transform' && e.propertyName !== 'opacity') return;
     next.removeEventListener('transitionend', handler);
     cleanup();
   });
@@ -649,7 +531,7 @@ function openProject(slug, opts) {
   section.style.scrollBehavior = prevBehavior;
   section.querySelectorAll('.reveal').forEach(el => el.classList.remove('visible'));
 
-  buildProjectDots(section);
+  observeProjectShots(section);
 
   if (IS_MOBILE) {
     const cur = activeSection();
@@ -660,146 +542,58 @@ function openProject(slug, opts) {
     section.scrollTop = 0;
     updateNav('project-page');
     onSectionEnter('project-page');
-    try { history.replaceState(null, '', '#' + slug); } catch (e) {}
+    try { history.replaceState(null, '', '#' + slug); } catch (e) { }
     if (pendingHeroVideo) {
       const p = pendingHeroVideo.play();
-      if (p && typeof p.catch === 'function') p.catch(() => {});
+      if (p && typeof p.catch === 'function') p.catch(() => { });
     }
     return;
   }
 
-  const sourceImg = opts.sourceImg || null;
-  const sourceTitle = opts.sourceTitle || null;
-  const sourceSub = opts.sourceSub || null;
-
   transitioning = true;
   const current = activeSection();
+  // Paging project→project is driven by pageProject()'s own red wipe; only a genuine
+  // enter (from a different section) gets the crossfade.
+  const isPaging = current === section;
 
   section.classList.add('push-in');
   section.style.visibility = 'visible';
 
-  const heroDest = heroEl.getBoundingClientRect();
-  const titleDest = titleEl.getBoundingClientRect();
-  const subDest = subEl ? subEl.getBoundingClientRect() : null;
-  const heroSrcRect = sourceImg ? sourceImg.getBoundingClientRect() : null;
-  const titleSrcRect = sourceTitle ? sourceTitle.getBoundingClientRect() : null;
-  const subSrcRect = (sourceSub && subEl) ? sourceSub.getBoundingClientRect() : null;
-
-  heroEl.style.willChange = 'transform';
-  titleEl.style.willChange = 'transform';
-  if (subEl) subEl.style.willChange = 'transform';
-
-  if (heroSrcRect) {
-
-    const sx = heroSrcRect.width / heroDest.width;
-    const sy = heroSrcRect.height / heroDest.height;
-    const s = Math.max(sx, sy);
-
-    const dx = (heroSrcRect.left - heroDest.left) + (heroSrcRect.width - heroDest.width * s) / 2;
-    const dy = (heroSrcRect.top - heroDest.top) + (heroSrcRect.height - heroDest.height * s) / 2;
-    heroEl.style.transition = 'none';
-    heroEl.style.transform = 'translate(' + dx + 'px, ' + dy + 'px) scale(' + s + ')';
-  }
-  if (titleSrcRect) {
-    const dx = titleSrcRect.left - titleDest.left;
-    const dy = titleSrcRect.top - titleDest.top;
-    titleEl.style.transition = 'none';
-    titleEl.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
-  }
-  if (subSrcRect && subDest) {
-    const dx = subSrcRect.left - subDest.left;
-    const dy = subSrcRect.top - subDest.top;
-    subEl.style.transition = 'none';
-    subEl.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
-  }
-
-  if (sourceImg) sourceImg.style.opacity = '0';
-  if (sourceTitle) sourceTitle.style.opacity = '0';
-  if (sourceSub) sourceSub.style.opacity = '0';
-
-  const EASE = 'cubic-bezier(0.76, 0, 0.24, 1)';
-  const DUR = 720;
-
-  const fadeOuts = [];
-  if (current && current.id === 'archive' && sourceTitle) {
-    const clickedItem = sourceTitle.closest('.work-item');
-    const clickedTop = clickedItem ? clickedItem.getBoundingClientRect().top : 0;
-    const TRANSIT = 'transform 700ms linear';
-    current.querySelectorAll('.work-item').forEach(item => {
-      if (item === clickedItem) return;
-      const goesUp = item.getBoundingClientRect().top < clickedTop;
-      item.style.transition = TRANSIT;
-      item.style.transform = goesUp ? 'translateY(-100vh)' : 'translateY(100vh)';
-      fadeOuts.push(item);
-    });
-    const workImages = current.querySelector('.work-images');
-    if (workImages) {
-      workImages.style.transition = TRANSIT;
-      workImages.style.transform = 'translateY(100vh)';
-      fadeOuts.push(workImages);
-    }
-
-    const foot = document.getElementById('archive-foot');
-    if (foot) foot.classList.remove('visible');
-  } else if (current) {
-
-    const others = current.querySelectorAll(
-      '#hero-featured, #hero-preview, .hero-tags'
-    );
-    others.forEach(el => {
-      el.style.transition = 'transform ' + DUR + 'ms ' + EASE + ', opacity ' + (DUR - 60) + 'ms ' + EASE;
-      el.style.transform = 'translateY(110vh)';
-      el.style.opacity = '0';
-      fadeOuts.push(el);
-    });
-  }
-  const dotGrid = document.getElementById('dot-grid');
-  if (dotGrid) {
-    dotGrid.style.transition = 'opacity 280ms ease';
-    dotGrid.style.opacity = '0';
-    fadeOuts.push(dotGrid);
-  }
-
+  // Shrink the panel from the top (CSS drives the slide) — reveals the nav strip.
   updateNav('project-page');
 
-  requestAnimationFrame(() => {
-    heroEl.style.transition = 'transform ' + DUR + 'ms ' + EASE;
-    heroEl.style.transform = 'none';
-    titleEl.style.transition = 'transform ' + DUR + 'ms ' + EASE;
-    titleEl.style.transform = 'none';
-    if (subEl && subSrcRect) {
-      subEl.style.transition = 'transform ' + DUR + 'ms ' + EASE;
-      subEl.style.transform = 'none';
+  const dotGrid = document.getElementById('dot-grid');
+
+  const FADE = isPaging ? 0 : 850;
+  if (!isPaging) {
+    section.style.transition = 'none';
+    section.style.opacity = '0';
+    if (dotGrid) {
+      dotGrid.style.transition = 'opacity 280ms ease';
+      dotGrid.style.opacity = '0';
     }
-  });
+    void section.offsetHeight;
+    // Crossfade the project page in (it's opaque and on top, so it dissolves over the
+    // outgoing section) while the panel slides down — mirrors the leave fade, no morph.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        section.style.transition = 'opacity ' + FADE + 'ms ease';
+        section.style.opacity = '1';
+      });
+    });
+  }
 
   setTimeout(() => {
-
-    heroEl.style.transition = '';
-    heroEl.style.transform = '';
-    heroEl.style.willChange = '';
-    titleEl.style.transition = '';
-    titleEl.style.transform = '';
-    titleEl.style.willChange = '';
-    if (subEl) {
-      subEl.style.transition = '';
-      subEl.style.transform = '';
-      subEl.style.willChange = '';
-    }
-    if (sourceImg) sourceImg.style.opacity = '';
-    if (sourceTitle) sourceTitle.style.opacity = '';
-    if (sourceSub) sourceSub.style.opacity = '';
-    fadeOuts.forEach(el => {
-      el.style.transition = '';
-      el.style.transform = '';
-      el.style.opacity = '';
-    });
-
-    if (current && current !== section) {
-      current.classList.remove('active');
-    }
+    if (current && current !== section) current.classList.remove('active');
     section.classList.remove('push-in');
     section.classList.add('active');
+    section.style.transition = '';
+    section.style.opacity = '';
+
+    if (dotGrid) {
+      dotGrid.style.transition = '';
+      dotGrid.style.opacity = '';
+    }
 
     const heroContent = document.querySelector('.hero-content');
     if (heroContent) heroContent.classList.remove('is-project');
@@ -808,29 +602,36 @@ function openProject(slug, opts) {
 
     onSectionEnter('project-page');
     transitioning = false;
-    try { history.replaceState(null, '', '#' + slug); } catch (e) {}
+    try { history.replaceState(null, '', '#' + slug); } catch (e) { }
 
     if (pendingHeroVideo) {
       const p = pendingHeroVideo.play();
-      if (p && typeof p.catch === 'function') p.catch(() => {});
+      if (p && typeof p.catch === 'function') p.catch(() => { });
     }
-  }, DUR + 40);
+  }, FADE + 40);
 }
 
+// Build the full project list in the project nav strip once.
+(function buildProjectFootList() {
+  const list = document.getElementById('project-foot-list');
+  if (!list) return;
+  Object.keys(PROJECTS).forEach(slug => {
+    const a = document.createElement('a');
+    a.className = 'project-foot-link';
+    a.href = '#' + slug;
+    a.dataset.slug = slug;
+    a.textContent = PROJECTS[slug].name;
+    list.append(a);
+  });
+})();
+
+let currentProjectSlug = null;
 function updateProjectPager(slug) {
-  const order = Object.keys(PROJECTS);
-  const i = order.indexOf(slug);
-  if (i === -1) return;
-  const targets = {
-    'project-prev': order[(i - 1 + order.length) % order.length],
-    'project-next': order[(i + 1) % order.length]
-  };
-  Object.keys(targets).forEach(id => {
-    const a = document.getElementById(id);
-    if (!a) return;
-    a.dataset.slug = targets[id];
-    const nameEl = a.querySelector('.pager-name');
-    if (nameEl) nameEl.textContent = PROJECTS[targets[id]].name;
+  currentProjectSlug = slug;
+  const list = document.getElementById('project-foot-list');
+  if (!list) return;
+  list.querySelectorAll('.project-foot-link').forEach(a => {
+    a.classList.toggle('active', a.dataset.slug === slug);
   });
 }
 
@@ -877,35 +678,55 @@ function pageProject(slug, dir) {
   }, HALF + 20);
 }
 
-['project-prev', 'project-next'].forEach(id => {
-  const a = document.getElementById(id);
-  if (!a) return;
-  a.addEventListener('click', e => {
+(function () {
+  const list = document.getElementById('project-foot-list');
+  if (!list) return;
+  list.addEventListener('click', e => {
+    const a = e.target.closest('.project-foot-link');
+    if (!a) return;
     e.preventDefault();
     const slug = a.dataset.slug;
-    if (slug) pageProject(slug, id === 'project-next' ? 1 : -1);
+    if (!slug || slug === currentProjectSlug) return;
+    const order = Object.keys(PROJECTS);
+    const dir = order.indexOf(slug) > order.indexOf(currentProjectSlug) ? 1 : -1;
+    pageProject(slug, dir);
   });
-});
+})();
+
+(function () {
+  const back = document.getElementById('project-back');
+  if (!back) return;
+  back.addEventListener('click', e => {
+    e.preventDefault();
+    if (transitioning) return;
+    if (activeSectionId() === 'project-page') {
+      const target = SECTIONS.includes(projectSourceSection) ? projectSourceSection : 'archive';
+      switchSection(target);
+    } else {
+      switchSection('hero');   // about / archive → home
+    }
+  });
+})();
 
 function updateNav(sectionId) {
   const nav = document.getElementById('nav');
-  const foot = document.getElementById('archive-foot');
   setNavActive(sectionId);
 
-  nav.classList.toggle('archive-mode', sectionId === 'archive');
-  nav.classList.toggle('about-mode', sectionId === 'about');
-  if (foot) foot.classList.toggle('visible', sectionId === 'archive');
-  const dots = document.getElementById('project-dots');
-  if (dots) dots.classList.toggle('active', sectionId === 'project-page');
-  const pager = document.getElementById('project-pager');
-  if (pager) pager.classList.toggle('active', sectionId === 'project-page');
-  if (sectionId === 'hero') {
-    nav.classList.remove('scrolled');
-    nav.classList.remove('nav-collapsed');
-  } else {
-    nav.classList.add('scrolled');
-    nav.classList.add('nav-collapsed');
+  const isProject = sectionId === 'project-page';
+  const isAbout = sectionId === 'about';
+  // Project pages and the About page both get the nav strip + panel shrink. About shows
+  // only the Back button (no project list). The panel reshape is a GPU transform that
+  // happens behind the red wipe on a section change, so it can't reflow-jank.
+  const showStrip = isProject || isAbout;
+  const foot = document.getElementById('project-foot');
+  if (foot) {
+    foot.classList.toggle('active', showStrip);
+    foot.classList.toggle('foot-back-only', isAbout);
   }
+  const container = document.querySelector('.sections-container');
+  if (container) container.classList.toggle('project-open', showStrip);
+  nav.classList.toggle('scrolled', sectionId !== 'hero');
+  nav.classList.toggle('nav-collapsed', sectionId !== 'hero');
 }
 
 function setNavActive(sectionId) {
@@ -925,7 +746,7 @@ function onSectionEnter(sectionId) {
 
   if (sectionId !== 'project-page') {
     document.querySelectorAll('#project-page video').forEach(v => {
-      try { v.pause(); } catch (e) {}
+      try { v.pause(); } catch (e) { }
     });
   }
   if (sectionId === 'archive') {
@@ -967,6 +788,10 @@ if (canvas && !IS_MOBILE) {
   let dots = [];
   let drops = [];
 
+  // Idle rain: when raining, drops self-spawn instead of being created by clicks.
+  let heroRaining = false, heroRainSpawn = 0;
+  const RAIN_MIN = 36, RAIN_VAR = 60;   // frames between drops (~0.6s–1.6s @60fps)
+
   function buildDots() {
     dots = [];
     const w = canvas.width, h = canvas.height;
@@ -995,25 +820,6 @@ if (canvas && !IS_MOBILE) {
   hero.addEventListener('mouseleave', () => { gridMX = -9999; gridMY = -9999; });
   const FLASH_MAX = 78;
 
-  hero.addEventListener('click', e => {
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const isFlash = !!e.target.closest('.hero-enter');
-    let speed = DROP_SPEED;
-    if (isFlash) {
-      const W = canvas.width, H = canvas.height;
-      const far = Math.max(
-        Math.hypot(x, y),
-        Math.hypot(W - x, y),
-        Math.hypot(x, H - y),
-        Math.hypot(W - x, H - y)
-      );
-      speed = far / FLASH_MAX;
-    }
-    drops.push({ x, y, age: 0, isFlash, speed });
-  });
-
   window.addEventListener('hero-linear-flash', (e) => {
     const duration = (e.detail && e.detail.duration) || FLASH_MAX;
     drops.push({
@@ -1028,6 +834,14 @@ if (canvas && !IS_MOBILE) {
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
     t += 0.012;
+
+    if (heroRaining) {
+      heroRainSpawn--;
+      if (heroRainSpawn <= 0) {
+        drops.push({ x: Math.random() * w, y: Math.random() * h, age: 0 });
+        heroRainSpawn = RAIN_MIN + Math.random() * RAIN_VAR;
+      }
+    }
 
     for (let i = drops.length - 1; i >= 0; i--) {
       drops[i].age++;
@@ -1117,136 +931,28 @@ if (canvas && !IS_MOBILE) {
     dotGridStart();
   });
 
+  RAIN_FIELDS['hero'] = {
+    start() { heroRaining = true; heroRainSpawn = 0; },
+    stop() { heroRaining = false; }
+  };
+
   window.dispatchEvent(new CustomEvent('hero-linear-flash', { detail: { duration: 15 } }));
 }
 
 (function () {
   const wrap = document.getElementById('hero-featured');
   const heroSection = document.getElementById('hero');
-  const previewWrap = document.getElementById('hero-preview');
   if (!wrap || !heroSection) return;
 
-  const titleEl = document.querySelector('.hero-title-text');
-  const roleEl = document.querySelector('.hero-role-text');
-  const contentEl = document.querySelector('.hero-content');
-  const DEFAULT_TITLE = titleEl ? titleEl.textContent : 'Portfolio';
-  const DEFAULT_ROLE = roleEl ? roleEl.textContent : '';
-
-  const bg = url => 'url("' + url + '")';
-
-  const tiles = [...wrap.querySelectorAll('.hero-feature')].map(tile => {
+  const tiles = [...wrap.querySelectorAll('.hero-feature')];
+  tiles.forEach(tile => {
     const images = (tile.dataset.images || '').split('|').map(s => s.trim()).filter(Boolean);
-    tile.innerHTML = '';
-    const img = document.createElement('div');
-    img.className = 'hero-feature-img';
-    if (images[0]) img.style.backgroundImage = bg(images[0]);
-    tile.append(img);
-    return { el: tile, images, name: tile.dataset.name || '', type: tile.dataset.type || '' };
+    const img = tile.querySelector('.hero-feature-img');
+    if (img && images[0]) img.style.backgroundImage = 'url("' + images[0] + '")';
   });
 
-  const ZONES = {
-    TL: { l: 3.1,  t: 10,   w: 23.6, h: 31.8 },
-    TR: { l: 45.8, t: 9.8,  w: 47.2, h: 27.1 },
-    BL: { l: 3.1,  b: 10.7, w: 37.5, h: 25.1 },
-    BR: { l: 59.4, b: 7.8,  w: 20.8, h: 31.3 }
-  };
-
-  const LA_ZONES = [
-    { l: 67,  t: 7,  w: 26, h: 58 },
-    { l: 2.5, t: 7,  w: 33, h: 34 },
-    { l: 24,  t: 59, w: 23, h: 33 }
-  ];
-  function zonesFor(ri) {
-    if (ri === 0) return [ZONES.TL, ZONES.BL, ZONES.BR];
-    if (ri === 2) return LA_ZONES;
-    return [ZONES.TL, ZONES.TR, ZONES.BL];
-  }
-  function place(s) {
-    return (s.t != null ? 'top:' + s.t + 'vh;' : 'bottom:' + s.b + 'vh;') +
-      'left:' + s.l + 'vw;width:' + s.w + 'vw;height:' + s.h + 'vh;';
-  }
-
-  const SLIDE_MS = 140;
-  const SLIDE_EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
-  const swapEls = [titleEl, roleEl].filter(Boolean);
-  let titleTimer = null;
-  function morph(html, role, isProject) {
-    clearTimeout(titleTimer);
-    swapEls.forEach(el => {
-      el.style.transition = 'transform ' + SLIDE_MS + 'ms ' + SLIDE_EASE + ', opacity ' + SLIDE_MS + 'ms ' + SLIDE_EASE;
-      el.style.transform = 'translateX(-110%)';
-      el.style.opacity = '0';
-    });
-    titleTimer = setTimeout(() => {
-
-      if (titleEl) { titleEl.textContent = html; titleEl.classList.toggle('is-project', !!isProject); }
-      if (roleEl) roleEl.textContent = role;
-      if (contentEl) contentEl.classList.toggle('is-project', !!isProject);
-      swapEls.forEach(el => { el.style.transition = 'none'; el.style.transform = 'translateX(110%)'; });
-      void swapEls[0].offsetWidth;
-      swapEls.forEach(el => {
-        el.style.transition = 'transform ' + SLIDE_MS + 'ms ' + SLIDE_EASE + ', opacity ' + SLIDE_MS + 'ms ' + SLIDE_EASE;
-        el.style.transform = 'translateX(0)';
-        el.style.opacity = '1';
-      });
-    }, SLIDE_MS);
-  }
-
-  const IN_STEP = 110;
-  let activeTile = null;
-  let timers = [];
-  const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
-
-  function enterProject(t) {
-    if (activeTile === t) return;
-    clearTimers();
-    activeTile = t;
-    const ri = tiles.indexOf(t);
-    morph(t.name, t.type, true);
-    tiles.forEach(o => { if (o !== t) o.el.classList.add('hf-out'); });
-
-    const slots = zonesFor(ri);
-    const fitContain = ri === 2;
-    const extras = t.images.slice(1);
-    previewWrap.textContent = '';
-    const imgs = slots.map((s, i) => {
-      const el = document.createElement('div');
-      el.className = 'hero-preview-img' + (fitContain ? ' fit-contain' : '');
-      el.style.cssText = place(s);
-      el.style.backgroundImage = bg(extras[i % extras.length] || t.images[0]);
-      previewWrap.appendChild(el);
-      return el;
-    });
-    const start = 200;
-    imgs.forEach((el, i) => { timers.push(setTimeout(() => el.classList.add('show'), start + i * IN_STEP)); });
-  }
-
-  function exitProject() {
-    if (!activeTile) return;
-    clearTimers();
-    activeTile = null;
-    morph(DEFAULT_TITLE, DEFAULT_ROLE, false);
-    previewWrap.textContent = '';
-    tiles.forEach(o => o.el.classList.remove('hf-out'));
-  }
-
-  if (!IS_MOBILE) {
-    wrap.addEventListener('mouseover', e => {
-      const el = e.target.closest && e.target.closest('.hero-feature');
-      if (!el) return;
-      const t = tiles.find(o => o.el === el);
-      if (t) enterProject(t);
-    });
-    wrap.addEventListener('mouseout', e => {
-      const to = e.relatedTarget;
-      if (to && to.closest && to.closest('.hero-feature')) return;
-      exitProject();
-    });
-  }
-
   requestAnimationFrame(() => heroSection.classList.add('featured-ready'));
-
-  setTimeout(() => { tiles.forEach(o => { o.el.style.transitionDelay = '0s'; }); }, 1200);
+  setTimeout(() => { tiles.forEach(t => { t.style.transitionDelay = '0s'; }); }, 1200);
 })();
 
 let heroTriggered = false;
@@ -1345,60 +1051,11 @@ function setWorkActive(idx) {
     });
   }
 
-  function clearSnapped() {
-    document.querySelectorAll('.work-list .work-item').forEach(el => el.classList.remove('active'));
-    imgGroups.forEach(el => el.classList.remove('active'));
-  }
-
   let position = 0;
   let velocity = 0;
   let loopH = 0;
   let ready = false;
-  let userHasScrolled = false;
-  let snapTarget = null;
-  let pendingSnapIdx = -1;
-  let snappedIdx = -1;
-
-  container.addEventListener('wheel', e => {
-    e.preventDefault();
-    if (!ready) return;
-    velocity += e.deltaY * 0.20;
-    userHasScrolled = true;
-    snapTarget = null;
-  }, { passive: false });
-
-  let touchActive = false, lastTouchY = 0, lastTouchT = 0, touchVel = 0;
-  container.addEventListener('touchstart', e => {
-    if (!ready) return;
-    touchActive = true;
-    lastTouchY = e.touches[0].clientY;
-    lastTouchT = performance.now();
-    touchVel = 0;
-    velocity = 0;
-    snapTarget = null;
-    userHasScrolled = true;
-  }, { passive: true });
-  container.addEventListener('touchmove', e => {
-    if (!ready || !touchActive || loopH <= 0) return;
-    e.preventDefault();
-    const y = e.touches[0].clientY;
-    const dy = lastTouchY - y;
-    const now = performance.now();
-    const dt = (now - lastTouchT) || 16;
-    touchVel = (dy / dt) * 16;
-    lastTouchY = y;
-    lastTouchT = now;
-    position = (((position + dy) % loopH) + loopH) % loopH;
-    list.style.transform = 'translate3d(0, ' + (-position) + 'px, 0)';
-    if (snappedIdx !== -1) { clearSnapped(); snappedIdx = -1; }
-    snapTarget = null;
-  }, { passive: false });
-  container.addEventListener('touchend', () => {
-    if (!touchActive) return;
-    touchActive = false;
-    velocity = Math.max(-60, Math.min(60, touchVel));
-    userHasScrolled = true;
-  }, { passive: true });
+  let activeIdx = -1;
 
   function getCenter() {
     const cs = getComputedStyle(container);
@@ -1406,38 +1063,6 @@ function setWorkActive(idx) {
     const padBot = parseFloat(cs.paddingBottom) || 0;
     return padTop + (container.clientHeight - padTop - padBot) / 2;
   }
-
-  function snapToIndex(idx) {
-    if (loopH <= 0) return;
-    const candidates = [...list.querySelectorAll('.work-item[data-index="' + idx + '"]')];
-    if (!candidates.length) return;
-    const center = getCenter();
-    let best = null, bestDist = Infinity;
-    for (const it of candidates) {
-      const screenY = it.offsetTop - position + it.offsetHeight / 2;
-      const d = Math.abs(screenY - center);
-      if (d < bestDist) { bestDist = d; best = it; }
-    }
-    if (!best) return;
-    const raw = best.offsetTop + best.offsetHeight / 2 - center;
-    let delta = ((raw - position) % loopH + loopH) % loopH;
-    if (delta > loopH / 2) delta -= loopH;
-    snapTarget = position + delta;
-    pendingSnapIdx = idx;
-    if (snappedIdx !== -1) { clearSnapped(); snappedIdx = -1; }
-    velocity = 0;
-    userHasScrolled = true;
-  }
-
-  window.addEventListener('keydown', e => {
-    if (activeSectionId() !== 'archive' || !ready) return;
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      const cur = snappedIdx >= 0 ? snappedIdx : (pendingSnapIdx >= 0 ? pendingSnapIdx : 0);
-      const next = e.key === 'ArrowDown' ? (cur + 1) % N : (cur - 1 + N) % N;
-      snapToIndex(next);
-    }
-  });
 
   function findNearestItem() {
     const allItems = [...list.querySelectorAll('.work-item')];
@@ -1451,44 +1076,73 @@ function setWorkActive(idx) {
     return best;
   }
 
+  // Whichever row is nearest the panel center is "active"; its image swaps in
+  // instantly (no fade — see .work-img-group in CSS).
+  function updateActive() {
+    const nearest = findNearestItem();
+    if (!nearest) return;
+    const idx = parseInt(nearest.dataset.index) % N;
+    if (idx !== activeIdx) { setWorkActive(idx); activeIdx = idx; }
+  }
+
+  function render() {
+    position = ((position % loopH) + loopH) % loopH;
+    list.style.transform = 'translate3d(0, ' + (-position) + 'px, 0)';
+    updateActive();
+  }
+
+  // Mouse wheel / trackpad: move 1:1 with the scroll delta. No momentum, no snap.
+  container.addEventListener('wheel', e => {
+    e.preventDefault();
+    if (!ready || loopH <= 0) return;
+    position += e.deltaY;
+    render();
+  }, { passive: false });
+
+  // Touch: drag 1:1, with a light inertia fling on release. Still no snap.
+  let touchActive = false, lastTouchY = 0, lastTouchT = 0, touchVel = 0;
+  container.addEventListener('touchstart', e => {
+    if (!ready) return;
+    touchActive = true;
+    lastTouchY = e.touches[0].clientY;
+    lastTouchT = performance.now();
+    touchVel = 0;
+    velocity = 0;
+  }, { passive: true });
+  container.addEventListener('touchmove', e => {
+    if (!ready || !touchActive || loopH <= 0) return;
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    const dy = lastTouchY - y;
+    const now = performance.now();
+    const dt = (now - lastTouchT) || 16;
+    touchVel = (dy / dt) * 16;
+    lastTouchY = y;
+    lastTouchT = now;
+    position += dy;
+    render();
+  }, { passive: false });
+  container.addEventListener('touchend', () => {
+    if (!touchActive) return;
+    touchActive = false;
+    velocity = Math.max(-60, Math.min(60, touchVel));
+  }, { passive: true });
+
+  // Arrow keys nudge by one row (instant), without re-introducing scroll snap.
+  window.addEventListener('keydown', e => {
+    if (activeSectionId() !== 'archive' || !ready || loopH <= 0) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      position += (e.key === 'ArrowDown' ? 1 : -1) * (loopH / N);
+      render();
+    }
+  });
+
   function tick() {
-    if (loopH > 0 && activeSectionId() === 'archive') {
-      const moving = Math.abs(velocity) > 0.05;
-      if (moving) {
-        position += velocity;
-        velocity *= 0.18;
-        position = ((position % loopH) + loopH) % loopH;
-        list.style.transform = 'translate3d(0, ' + (-position) + 'px, 0)';
-        if (snappedIdx !== -1) { clearSnapped(); snappedIdx = -1; }
-        snapTarget = null;
-      } else if (userHasScrolled) {
-        if (snapTarget === null && snappedIdx === -1) {
-          const nearest = findNearestItem();
-          if (nearest) {
-            const raw = nearest.offsetTop + nearest.offsetHeight / 2 - getCenter();
-            let delta = ((raw - position) % loopH + loopH) % loopH;
-            if (delta > loopH / 2) delta -= loopH;
-            snapTarget = position + delta;
-            pendingSnapIdx = parseInt(nearest.dataset.index) % N;
-          }
-        }
-        if (snapTarget !== null) {
-          const diff = snapTarget - position;
-          if (Math.abs(diff) < 0.5) {
-            position = ((snapTarget % loopH) + loopH) % loopH;
-            snapTarget = null;
-            list.style.transform = 'translate3d(0, ' + (-position) + 'px, 0)';
-            if (snappedIdx !== pendingSnapIdx) {
-              setWorkActive(pendingSnapIdx);
-              snappedIdx = pendingSnapIdx;
-            }
-          } else {
-            position += diff * 0.5;
-            list.style.transform = 'translate3d(0, ' + (-position) + 'px, 0)';
-          }
-        }
-        velocity = 0;
-      }
+    if (loopH > 0 && !touchActive && Math.abs(velocity) > 0.1 && activeSectionId() === 'archive') {
+      position += velocity;
+      velocity *= 0.92;
+      render();
     }
     requestAnimationFrame(tick);
   }
@@ -1521,11 +1175,7 @@ function setWorkActive(idx) {
     }
     if (best) {
       position = best.offsetTop + best.offsetHeight / 2 - center;
-      position = ((position % loopH) + loopH) % loopH;
-      list.style.transform = 'translate3d(0, ' + (-position) + 'px, 0)';
-      const idx = parseInt(best.dataset.index) % N;
-      setWorkActive(idx);
-      snappedIdx = idx;
+      render();
     }
 
     if (wasHidden) {
@@ -1554,7 +1204,7 @@ document.querySelectorAll('.nav-links a, .nav-monogram').forEach(link => {
     if (!section) return;
     e.preventDefault();
     if (section === activeSectionId()) return;
-    switchSection(section, { cx: e.clientX, cy: e.clientY });
+    switchSection(section);
   });
 });
 
@@ -1568,6 +1218,8 @@ document.addEventListener('click', e => {
   if (!slug || !PROJECTS[slug]) return;
   e.preventDefault();
   if (transitioning) return;
+
+  projectSourceSection = fromHero ? 'hero' : 'archive';
 
   let sourceImg = null;
   let sourceTitle = null;
@@ -1602,7 +1254,6 @@ document.addEventListener('click', e => {
 
 (function () {
   const nav = document.getElementById('nav');
-  const foot = document.getElementById('archive-foot');
 
   function bindScroll(el, dir, target) {
     if (!el) return;
@@ -1622,45 +1273,7 @@ document.addEventListener('click', e => {
     }, { passive: true });
   }
 
-  function bindClick(el, target) {
-    if (!el) return;
-    el.addEventListener('click', e => {
-      if (activeSectionId() !== 'archive' || transitioning) return;
-      switchSection(target, { cx: e.clientX, cy: e.clientY });
-    });
-  }
-
   bindScroll(nav, 'up', 'hero');
-
-  bindScroll(foot, 'down', 'about');
-  bindClick(foot, 'about');
-})();
-
-document.querySelectorAll('.nav-back').forEach(link => {
-  link.addEventListener('click', e => {
-    e.preventDefault();
-    const section = link.dataset.section;
-    if (section) switchSection(section, { cx: e.clientX, cy: e.clientY });
-  });
-});
-
-(function () {
-  let scrollUpAcc = 0, lastUpTs = 0;
-
-  window.addEventListener('wheel', e => {
-    if (activeSectionId() !== 'about' || transitioning) return;
-    const about = document.getElementById('about');
-    const now = performance.now();
-
-    if (e.deltaY < 0 && about.scrollTop <= 5) {
-      if (now - lastUpTs > 300) scrollUpAcc = 0;
-      lastUpTs = now;
-      scrollUpAcc += Math.abs(e.deltaY);
-      if (scrollUpAcc > 200) { scrollUpAcc = 0; switchSection('archive'); }
-    } else {
-      scrollUpAcc = 0;
-    }
-  }, { passive: true });
 })();
 
 (function () {
@@ -1716,4 +1329,111 @@ window.addEventListener('DOMContentLoaded', () => {
     el.textContent = addr;
     el.href = 'mailto:' + addr;
   });
+})();
+
+// ── Idle rain on the non-hero sections ───────────────────────────────────────
+// A blank canvas that, while active, fades in a faint dot field and lets subtle
+// drops radiate ripple rings through it (same look as a hero click, fainter).
+// Fades back to nothing when stopped.
+function makeRainField(canvas) {
+  if (!canvas) return null;
+  const ctx = canvas.getContext('2d');
+  const SPACING = 42, DROP_SPEED = 7, DROP_MAX = 90, RING_WIDTH = 30;
+  const RAIN_MIN = 36, RAIN_VAR = 60;        // frames between drops (~0.6s–1.6s @60fps)
+  const RING_OPACITY = 0.7, DOT_OPACITY = 0.05;
+  let raf = null, dots = [], drops = [], fade = 0, target = 0, spawn = 0;
+
+  function build() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    dots = [];
+    for (let x = SPACING * 0.5; x < canvas.width; x += SPACING)
+      for (let y = SPACING * 0.5; y < canvas.height; y += SPACING)
+        dots.push({ x, y });
+  }
+
+  function frame() {
+    const w = canvas.width, h = canvas.height;
+    fade += (target - fade) * 0.05;
+    ctx.clearRect(0, 0, w, h);
+
+    if (target === 0 && fade < 0.01) { raf = null; return; }   // fully faded out → stop
+
+    if (target === 1) {
+      spawn--;
+      if (spawn <= 0) {
+        drops.push({ x: Math.random() * w, y: Math.random() * h, age: 0 });
+        spawn = RAIN_MIN + Math.random() * RAIN_VAR;
+      }
+    }
+    for (let i = drops.length - 1; i >= 0; i--) {
+      drops[i].age++;
+      if (drops[i].age > DROP_MAX) drops.splice(i, 1);
+    }
+
+    for (let i = 0, n = dots.length; i < n; i++) {
+      const dot = dots[i];
+      ctx.beginPath();
+      ctx.arc(dot.x, dot.y, 1.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(10,10,10,' + (DOT_OPACITY * fade) + ')';
+      ctx.fill();
+
+      let boost = 0;
+      for (let j = 0, m = drops.length; j < m; j++) {
+        const d = drops[j];
+        const dx = dot.x - d.x, dy = dot.y - d.y;
+        const dm = Math.sqrt(dx * dx + dy * dy);
+        const ringR = d.age * DROP_SPEED;
+        const dRing = Math.abs(dm - ringR);
+        if (dRing < RING_WIDTH) boost += (1 - dRing / RING_WIDTH) * (1 - d.age / DROP_MAX);
+      }
+      if (boost > 0.01) {
+        if (boost > 1) boost = 1;
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, 1.5 + boost * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,45,0,' + (boost * RING_OPACITY * fade) + ')';
+        ctx.fill();
+      }
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  return {
+    start() { build(); drops = []; spawn = 0; target = 1; if (!raf) raf = requestAnimationFrame(frame); },
+    stop() { target = 0; },
+    resize() { if (raf) build(); }
+  };
+}
+
+['archive', 'about', 'project-page'].forEach(id => {
+  const section = document.getElementById(id);
+  const field = makeRainField(section && section.querySelector('.rain-canvas'));
+  if (field) RAIN_FIELDS[id] = field;
+});
+
+window.addEventListener('resize', () => {
+  Object.keys(RAIN_FIELDS).forEach(id => {
+    if (RAIN_FIELDS[id].resize) RAIN_FIELDS[id].resize();
+  });
+});
+
+// Idle controller: any activity resets a single timer; after IDLE_MS of true
+// inactivity, rain starts on the active section. Any activity fades it out and
+// restarts the countdown. Desktop only (matches the hero dot-grid).
+(function () {
+  if (IS_MOBILE) return;
+  let idleTimer = null, current = null;
+
+  function start() {
+    const f = RAIN_FIELDS[activeSectionId()];
+    if (f) { current = f; f.start(); }
+  }
+  function reset() {
+    if (current) { current.stop(); current = null; }
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(start, IDLE_MS);
+  }
+  ['mousemove', 'wheel', 'keydown', 'touchstart', 'touchmove', 'pointerdown'].forEach(ev =>
+    window.addEventListener(ev, reset, { passive: true }));
+  reset();
 })();
