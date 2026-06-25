@@ -31,8 +31,10 @@ const PROJECTS = {
       { images: ['HybridConstruction/hybrid-03.mp4', 'HybridConstruction/hybrid-01.webp', 'HybridConstruction/hybrid-02.webp'], cols: 3, rows: 1, cover: true },
 
       { images: ['HybridConstruction/hybrid-10.webp', 'HybridConstruction/hybrid-07.webp', 'HybridConstruction/hybrid-11.webp', 'HybridConstruction/hybrid-05.webp'], cols: 2, rows: 2, gap: 0, cover: true },
-      'HybridConstruction/hybrid-12.mp4',
-      'HybridConstruction/hybrid-06.webp'
+      'HybridConstruction/hybrid-16.mp4',
+      { images: ['HybridConstruction/hybrid-13.webp', 'HybridConstruction/hybrid-14.webp', 'HybridConstruction/hybrid-15.webp'], cols: 3, rows: 1, gap: 0, cover: true },
+      'HybridConstruction/hybrid-06.webp',
+      'HybridConstruction/hybrid-12.mp4'
     ]
   },
   'raufwerk': {
@@ -46,6 +48,8 @@ const PROJECTS = {
 
       { images: ['RaufWerk/raufwerk-04.mp4', 'RaufWerk/raufwerk-02.mp4'], cols: 2, rows: 1 },
 
+      { images: ['RaufWerk/raufwerk-26.webp', 'RaufWerk/raufwerk-30.webp', 'RaufWerk/raufwerk-27.webp', 'RaufWerk/raufwerk-28.webp'], cols: 4, rows: 1 },
+
       {
         layout: 'levels', gap: '8px',
         rows: [
@@ -55,7 +59,8 @@ const PROJECTS = {
         ]
       },
       'RaufWerk/raufwerk-05.mp4',
-      'RaufWerk/raufwerk-06.mp4'
+      'RaufWerk/raufwerk-06.mp4',
+      'RaufWerk/raufwerk-25.webp'
     ]
   },
   'l-acoustics': {
@@ -89,7 +94,8 @@ const PROJECTS = {
         ]
       },
       'LAccoustic/laccoustic-25.mp4',
-      'LAccoustic/laccoustic-26.mp4'
+      'LAccoustic/laccoustic-26.mp4',
+      'LAccoustic/laccoustic-30.webp'
     ]
   },
   'sears-catalog': {
@@ -104,7 +110,11 @@ const PROJECTS = {
 
       { images: ['Sears/sears-03.webp', 'Sears/sears-05.webp'], cols: 2, rows: 1 },
 
-      { layout: 'rect-pair', contain: true, images: ['Sears/sears-09.mp4', 'Sears/sears-04.webp'] }
+      { layout: 'rect-pair', contain: true, images: ['Sears/sears-09.mp4', 'Sears/sears-04.webp'] },
+      'Sears/sears-16.webp',
+      { images: ['Sears/sears-10.webp', 'Sears/sears-11.webp', 'Sears/sears-12.webp', 'Sears/sears-13.webp'], cols: 2, rows: 2, gap: 0, cover: true },
+      'Sears/sears-14.webp',
+      'Sears/sears-15.webp'
     ],
 
     feature: { image: 'Sears/sears-06.webp', label: 'Featured in Log 61 in an essay by Matt Conway' }
@@ -121,7 +131,7 @@ const PROJECTS = {
     type: 'Architecture · Healthcare',
     blurb: 'Hippotherapy is the use of a horse’s gate to mimic the movement of the human pelvis to speed up recovery. This project is an extension of this therapeutic idea through mimicking the hose’s gate organizationally and formally. The plan was separated logically into its programmatic functions with three wings in the front, medical therapy, psychological therapy, and admin functional spaces. The large connecting space in the back functions as the hippotherapy arena where sessions take place. Organizationally the horse’s gate is where the circulation spaces occur separating the building into standard and eccentric spaces. The forms were all derived from various combinations of both sides of the horse’s gate being lofted together into unique planes which follow the organizational cuts happening in the project.',
     credits: 'Instructor: Steven Roop',
-    gallery: ['HippoTherapy/hippotherapy-02.webp', 'HippoTherapy/hippotherapy-03.webp', 'HippoTherapy/hippotherapy-01.webp', 'HippoTherapy/hippotherapy-04.webp']
+    gallery: ['HippoTherapy/hippotherapy-02.webp', 'HippoTherapy/hippotherapy-03.webp', 'HippoTherapy/hippotherapy-05.webp', { src: 'HippoTherapy/hippotherapy-01.webp', full: true }, 'HippoTherapy/hippotherapy-04.webp', 'HippoTherapy/hippotherapy-06.webp']
   },
   'urban-farming': {
     name: 'Urban Farming',
@@ -134,7 +144,9 @@ const PROJECTS = {
 
       { layout: 'rect-pair', contain: true, images: ['UrbanFarming/urbanfarming-04.webp', 'UrbanFarming/urbanfarming-01.webp'] },
 
-      { layout: 'rect-pair', contain: true, images: ['UrbanFarming/urbanfarming-05.webp', 'UrbanFarming/urbanfarming-06.webp'] }
+      { layout: 'rect-pair', contain: true, images: ['UrbanFarming/urbanfarming-05.webp', 'UrbanFarming/urbanfarming-06.webp'] },
+      'UrbanFarming/urbanfarming-07.webp',
+      { images: ['UrbanFarming/urbanfarming-08.webp', 'UrbanFarming/urbanfarming-09.webp', 'UrbanFarming/urbanfarming-10.webp'], cols: 3, rows: 1, gap: 0, cover: true }
     ]
   }
 };
@@ -163,7 +175,7 @@ function observeProjectShots(section) {
   if (!section) return;
   if (projectDotsObserver) { projectDotsObserver.disconnect(); projectDotsObserver = null; }
 
-  const targets = [...section.querySelectorAll('.project-hero, .project-meta-row, .project-shot')];
+  const targets = [...section.querySelectorAll('.project-hero, .project-shot')];
   if (!targets.length) return;
 
   projectDotsObserver = new IntersectionObserver(entries => {
@@ -317,7 +329,8 @@ function openProject(slug, opts) {
   const galleryEl = document.getElementById('project-gallery');
   if (!section || !titleEl || !heroEl) return;
 
-  titleEl.textContent = data.name;
+  // Long (multi-word) titles stack one word per line; shorter names stay on one row.
+  titleEl.innerHTML = data.name.length > 14 ? data.name.replace(/\s+/g, '<br>') : data.name;
   if (subEl) subEl.textContent = data.type;
   if (blurbEl) blurbEl.textContent = data.blurb;
   const creditsEl = document.getElementById('project-credits-text');
@@ -325,24 +338,23 @@ function openProject(slug, opts) {
   section.dataset.project = slug;
 
   const metaRow = section.querySelector('.project-meta-row');
-  if (metaRow) {
-    const existing = metaRow.querySelector('.meta-feature');
-    if (existing) existing.remove();
-    if (data.feature) {
-      const fig = document.createElement('figure');
-      fig.className = 'meta-feature';
-      const im = document.createElement('img');
-      im.src = data.feature.image;
-      im.alt = '';
-      fig.append(im);
-      if (data.feature.label) {
-        const lab = document.createElement('figcaption');
-        lab.className = 'feature-label';
-        lab.textContent = data.feature.label;
-        fig.append(lab);
-      }
-      metaRow.insertBefore(fig, metaRow.firstChild);
+  const existingFeature = section.querySelector('.meta-feature');
+  if (existingFeature) existingFeature.remove();
+  if (metaRow && data.feature) {
+    const fig = document.createElement('figure');
+    fig.className = 'meta-feature';
+    const im = document.createElement('img');
+    im.src = data.feature.image;
+    im.alt = '';
+    fig.append(im);
+    if (data.feature.label) {
+      const lab = document.createElement('figcaption');
+      lab.className = 'feature-label';
+      lab.textContent = data.feature.label;
+      fig.append(lab);
     }
+    // Place the feature above the blurb (just under the title) rather than inside the row.
+    metaRow.parentNode.insertBefore(fig, metaRow);
   }
   updateProjectPager(slug);
   const heroSrc = (data.gallery && data.gallery[0]) || '';
@@ -380,19 +392,35 @@ function openProject(slug, opts) {
     function makeMedia(src) {
       const isVid = /\.(mp4|webm|mov)$/i.test(src);
       const el = document.createElement(isVid ? 'video' : 'img');
-      el.src = src;
       if (isVid) {
-
+        // #t=0.1 + preload metadata so a paused (not-yet-centered) video still shows a
+        // frame instead of going blank, and its real dimensions load for natural sizing.
+        el.src = src + '#t=0.1';
         el.loop = true;
         el.muted = true;
         el.playsInline = true;
-        el.preload = 'none';
+        el.preload = 'metadata';
         el.setAttribute('playsinline', '');
       } else {
+        el.src = src;
         el.alt = data.name;
         el.loading = 'lazy';
       }
       return el;
+    }
+
+    // Cover grids: size the grid so every cell matches the media's aspect ratio, so the
+    // side-by-side images come out the same scale (cover-cropped to equal cells).
+    function setGroupAspect(wrap, el) {
+      const apply = () => {
+        const w = el.naturalWidth || el.videoWidth;
+        const h = el.naturalHeight || el.videoHeight;
+        if (w && h) wrap.style.setProperty('--ar', (w / h).toFixed(4));
+      };
+      const isVid = el.tagName === 'VIDEO';
+      const ready = isVid ? el.videoWidth : (el.complete && el.naturalWidth);
+      if (ready) apply();
+      else el.addEventListener(isVid ? 'loadedmetadata' : 'load', apply, { once: true });
     }
 
     function gridFor(n) {
@@ -431,6 +459,8 @@ function openProject(slug, opts) {
 
           pairs.forEach(p => inner.append(p.el));
           inner.style.gridTemplateColumns = pairs.map(p => p.ratio + 'fr').join(' ');
+          // Give the row one shared height (proportional columns → same scale, fills width).
+          inner.style.aspectRatio = pairs.reduce((s, p) => s + p.ratio, 0).toFixed(4);
         };
         imgs.forEach(im => {
           const isVid = im.tagName === 'VIDEO';
@@ -456,7 +486,9 @@ function openProject(slug, opts) {
         wrap.style.setProperty('--cols', g.cols);
         wrap.style.setProperty('--rows', g.rows);
         if (item.gap != null) wrap.style.gap = (typeof item.gap === 'number' ? item.gap + 'px' : item.gap);
-        item.images.forEach(src => wrap.append(makeMedia(src)));
+        const groupEls = item.images.map(makeMedia);
+        groupEls.forEach(el => wrap.append(el));
+        if (item.cover && groupEls[0]) setGroupAspect(wrap, groupEls[0]);
         galleryEl.append(wrap);
         return;
       }
@@ -502,8 +534,13 @@ function openProject(slug, opts) {
 
       let media = [];
       let cols = null, rows = null;
+      let fullShot = false;
       if (typeof item === 'string') {
         media = [item];
+      } else if (item && typeof item === 'object' && !Array.isArray(item) && typeof item.src === 'string') {
+        // Single image with options, e.g. { src, full: true } to bypass the height cap.
+        media = [item.src];
+        fullShot = !!item.full;
       } else if (Array.isArray(item) && item.length && Array.isArray(item[0])) {
         rows = item.length;
         cols = Math.max.apply(null, item.map(r => r.length));
@@ -519,6 +556,9 @@ function openProject(slug, opts) {
         wrap.classList.add('project-shot--group');
         wrap.style.setProperty('--cols', cols);
         wrap.style.setProperty('--rows', rows);
+      } else {
+        wrap.classList.add('project-shot--single');
+        if (fullShot) wrap.classList.add('project-shot--full');
       }
       media.forEach(src => wrap.append(makeMedia(src)));
       galleryEl.append(wrap);

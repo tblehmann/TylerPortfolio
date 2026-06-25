@@ -21,7 +21,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700&family=Syne:wght@700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=193">
+  <link rel="stylesheet" href="style.css?v=218">
 </head>
 
 <body>
@@ -49,7 +49,7 @@
           </div>
           <div class="hero-feature-info">
             <span class="hero-feature-name">Hybrid Construction</span>
-            <p class="hero-feature-blurb">3D-printed concrete and cross-laminated timber, organized by a site-aware design platform.</p>
+            <div class="hero-feature-blurb-wrap"><p class="hero-feature-blurb">3D-printed concrete and cross-laminated timber, organized by a site-aware design platform.</p></div>
           </div>
         </div>
         <div class="hero-feature" data-project="raufwerk" data-name="RaufWerk"
@@ -59,7 +59,7 @@
           </div>
           <div class="hero-feature-info">
             <span class="hero-feature-name">RaufWerk</span>
-            <p class="hero-feature-blurb">An AI-augmented design workflow for a Chinatown flagship built around a speculative product.</p>
+            <div class="hero-feature-blurb-wrap"><p class="hero-feature-blurb">An AI-augmented design workflow for a Chinatown flagship built around a speculative product.</p></div>
           </div>
         </div>
         <div class="hero-feature" data-project="l-acoustics" data-name="L&#8209;Acoustics"
@@ -69,7 +69,7 @@
           </div>
           <div class="hero-feature-info">
             <span class="hero-feature-name">L&#8209;Acoustics</span>
-            <p class="hero-feature-blurb">Agential AI and L-ISA spatial audio turning a bar into a self-aware, performative space.</p>
+            <div class="hero-feature-blurb-wrap"><p class="hero-feature-blurb">Agential AI and L-ISA spatial audio turning a bar into a self-aware, performative space.</p></div>
           </div>
         </div>
       </div>
@@ -254,22 +254,26 @@
 
       <div class="project-snap-anchor" aria-hidden="true"></div>
 
-      <div class="project-title-block">
-        <h1 class="project-title" id="project-title-text"></h1>
-        <span class="project-title-sub" id="project-title-sub-text"></span>
-      </div>
-      <div class="project-hero">
-        <img class="project-hero-img" id="project-hero-img" alt="" />
-      </div>
-      <div class="project-inner">
-        <div class="project-meta-row reveal">
-          <div class="project-blurb-col">
-            <p class="project-blurb" id="project-blurb-text"></p>
-            <p class="project-credits" id="project-credits-text"></p>
-            <p class="legal-line">© 2026. All trademarks and logos are the property of their respective owners.</p>
+      <div class="project-layout">
+        <div class="project-text-col">
+          <div class="project-title-block">
+            <h1 class="project-title" id="project-title-text"></h1>
+            <span class="project-title-sub" id="project-title-sub-text"></span>
+          </div>
+          <div class="project-meta-row reveal">
+            <div class="project-blurb-col">
+              <p class="project-blurb" id="project-blurb-text"></p>
+              <p class="project-credits" id="project-credits-text"></p>
+              <p class="legal-line">© 2026. All trademarks and logos are the property of their respective owners.</p>
+            </div>
           </div>
         </div>
-        <div class="project-gallery" id="project-gallery"></div>
+        <div class="project-media-col">
+          <div class="project-hero">
+            <img class="project-hero-img" id="project-hero-img" alt="" />
+          </div>
+          <div class="project-gallery" id="project-gallery"></div>
+        </div>
       </div>
     </section>
 
@@ -281,7 +285,7 @@
     <div class="project-foot-list" id="project-foot-list"></div>
   </nav>
 
-  <script src="script.js?v=170"></script>
+  <script src="script.js?v=187"></script>
 </body>
 
 </html>

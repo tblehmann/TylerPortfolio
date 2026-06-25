@@ -1,1 +1,7 @@
 .DS_Store
+
+# asset-conversion build artifacts (not for the repo)
+.venv/
+_originals/
+__pycache__/
+convertToAvif.zip

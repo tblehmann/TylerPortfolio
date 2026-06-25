@@ -402,7 +402,7 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 
   opacity: 0;
   transform: translateY(28px);
-  transition: flex-grow 0.8s var(--ease-out), opacity 0.4s var(--ease-out),
+  transition: flex-grow 1.1s var(--ease-out), opacity 0.4s var(--ease-out),
     transform 0.45s var(--ease-out);
 }
 
@@ -436,6 +436,18 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   background-position: center;
 }
 
+/* Hybrid's image reads better centred in the small preview — centring the fixed image in
+   the media window shows its middle; the expanded card reveals most of it either way. */
+.hero-feature[data-project="hybrid-construction"] .hero-feature-img {
+  top: 50%;
+  transform: translateY(-50%);
+}
+/* L-Acoustics: shift the preview toward the centre, but only partway. */
+.hero-feature[data-project="l-acoustics"] .hero-feature-img {
+  top: 30%;
+  transform: translateY(-30%);
+}
+
 /* Off-white strip under the image: always shows the title (left-aligned); the blurb
    reveals beneath it when the card is highlighted, growing the strip. */
 .hero-feature-info {
@@ -456,20 +468,27 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   color: var(--accent);
 }
 
+/* Reveal via grid-template-rows 0fr→1fr so it animates to the blurb's exact height over
+   the same 0.8s as the card's flex-grow — they finish together (no fast-snap overshoot). */
+.hero-feature-blurb-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 1.1s var(--ease-out);
+}
+
+.hero-feature:hover .hero-feature-blurb-wrap {
+  grid-template-rows: 1fr;
+}
+
 .hero-feature-blurb {
-  max-height: 0;
+  min-height: 0;
   overflow: hidden;
   margin: 0;
+  padding-top: 7px;
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 0.72rem;
   line-height: 1.5;
-  transition: max-height 0.8s var(--ease-out), margin-top 0.8s var(--ease-out);
-}
-
-.hero-feature:hover .hero-feature-blurb {
-  max-height: 7em;
-  margin-top: 7px;
 }
 
 .hero-content {
@@ -929,7 +948,7 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 #project-page .project-blurb-col {
   display: flex;
   flex-direction: column;
-  grid-column: 2;
+  grid-column: auto;
 }
 
 #project-page .project-credits {
@@ -1147,12 +1166,14 @@ footer {
   display: none;
 }
 
-/* All projects, on the right of the strip (mirrors Archive/About in the menu); Back
-   holds the left. Tighter than the menu so all seven fit on one row. */
+/* All projects, spread across the right of the strip to span the same width as the image
+   column below (48vw, right edge on the gutter); Back holds the left. */
 .project-foot-list {
   display: flex;
   align-items: center;
-  gap: 24px;
+  justify-content: space-between;
+  flex: 0 1 48vw;
+  gap: 16px;
 }
 
 .project-foot-link {
@@ -1188,15 +1209,46 @@ footer {
 
 #project-page .project-meta-row,
 #project-page .project-shot {
-  scroll-snap-align: start;
-  scroll-margin-top: var(--nav-h);
+  scroll-snap-align: none;
+  scroll-margin-top: 0;
+}
+
+/* Two-column layout: fixed text on the left, images scroll on the right. The section
+   itself is the scroll container (.page-section overflow-y:auto), so the left column
+   pins with position:sticky. */
+#project-page .project-layout {
+  display: grid;
+  grid-template-columns: minmax(340px, 720px) 1fr;
+  gap: 48px;
+  padding: 0 var(--pad-x) 160px;
+  box-sizing: border-box;
+  align-items: start;
+}
+
+#project-page .project-text-col {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  /* overflow:visible so the oversized title can spill over the right column (accepted
+     overlap); the section's own overflow-x:hidden clips it at the viewport edge. */
+  overflow: visible;
+  padding: 28px 0 24px;
+  z-index: 3;
+}
+
+#project-page .project-media-col {
+  min-width: 0;
+  max-width: 48vw;
+  justify-self: end;
+  /* 28px (the text column's top padding = title box top) + the title's cap-height leading
+     so the first image lines up with the visible top of the title letters. */
+  padding-top: calc(28px + clamp(3.2rem, 8.5vw, 12rem) * 0.1);
 }
 
 #project-page .project-title-block {
-  position: sticky;
-  top: 14vh;
-  z-index: 1;
-  margin: 14vh 0 0 var(--pad-x);
+  position: static;
+  z-index: auto;
+  margin: 0 0 0 -0.045em;
   pointer-events: none;
 }
 
@@ -1210,6 +1262,7 @@ footer {
   letter-spacing: 0.01em;
   color: var(--accent);
   white-space: nowrap;
+  overflow: visible;
   pointer-events: none;
   transform-origin: top left;
   text-transform: none;
@@ -1229,38 +1282,27 @@ footer {
   transform-origin: top left;
 }
 
-#project-page .project-inner {
-
-  padding: 0 var(--pad-x) 160px;
-  max-width: 1600px;
-  margin: 0 auto;
-  position: relative;
-}
-
 #project-page .project-hero {
   position: relative;
   z-index: 2;
-  width: min(100%, 1100px);
-  height: clamp(440px, 65vh, 760px);
-
-  margin-top: calc(-0.46 * clamp(3.2rem, 8.5vw, 12rem));
-  margin-left: auto;
-  margin-right: 0;
+  width: 100%;
+  height: auto;
+  margin: 0 0 24px 0;
   overflow: hidden;
   transform-origin: top left;
 }
 
 #project-page[data-project="raufwerk"] .project-hero {
-  width: min(92%, 1000px);
-  height: clamp(410px, 61vh, 710px);
+  width: 100%;
+  height: auto;
 }
 
 #project-page[data-project="raufwerk"] .project-title-block {
-  top: 8vh;
-  margin-top: 8vh;
+  top: auto;
+  margin-top: 0;
 }
 #project-page[data-project="raufwerk"] .project-meta-row {
-  padding-top: calc(8vh + clamp(3.2rem, 8.5vw, 12rem) * 0.92 + 40px);
+  padding-top: 0;
 }
 #project-page[data-project="raufwerk"] .project-blurb {
   font-size: 0.9rem;
@@ -1270,21 +1312,19 @@ footer {
 #project-page .project-hero-img {
   display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
+  /* Fill the column width; if the media is taller than the cap, cover-crop the centre
+     vertically rather than letterboxing or running off the page. */
+  max-height: 80vh;
   object-fit: cover;
   object-position: center;
 }
 
 #project-page .project-meta-row {
-  margin-top: 80px;
-  min-height: var(--panel-h);
-  display: grid;
-
-  grid-template-columns: 1fr 2fr;
-  gap: 60px;
-
-  align-content: start;
-  padding-top: calc(14vh + clamp(3.2rem, 8.5vw, 12rem) * 0.92 + 52px);
+  margin-top: 120px;
+  min-height: 0;
+  display: block;
+  padding-top: 0;
 }
 
 #project-page .project-type {
@@ -1307,10 +1347,10 @@ footer {
 }
 
 #project-page .project-gallery {
-  margin-top: 0;
+  margin-top: 48px;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 48px;
 }
 
 #project-page .reveal,
@@ -1324,31 +1364,46 @@ footer {
   position: relative;
   z-index: 2;
   width: 100%;
-  height: var(--panel-h);
+  height: auto;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 
-  padding: var(--shot-pad-y) var(--pad-x);
+  padding: 0;
   box-sizing: border-box;
 }
 
 #project-page .project-shot img,
 #project-page .project-shot video {
   display: block;
-  max-width: min(100%, var(--shot-max-w));
-  max-height: 100%;
-  width: auto;
+  max-width: 100%;
+  max-height: none;
+  width: 100%;
   height: auto;
+}
+
+/* Single images/videos: cap the height so tall (portrait) ones don't dominate — the
+   media stays centered at its natural ratio. .project-shot--full opts out (e.g. a plan). */
+#project-page .project-shot--single img,
+#project-page .project-shot--single video {
+  width: auto;
+  max-width: 100%;
+  max-height: 80vh;
+}
+#project-page .project-shot--single.project-shot--full img,
+#project-page .project-shot--single.project-shot--full video {
+  width: 100%;
+  max-height: none;
 }
 
 #project-page .project-shot--group {
   display: grid;
 
   grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
-  grid-template-rows: repeat(var(--rows, 1), minmax(0, 1fr));
+  grid-template-rows: auto;
   gap: 16px;
-  padding: 24px var(--pad-x);
+  padding: 0;
   align-items: center;
   justify-items: center;
   box-sizing: border-box;
@@ -1357,12 +1412,18 @@ footer {
 #project-page .project-shot--group img,
 #project-page .project-shot--group video {
   max-width: 100%;
-  max-height: 100%;
-  width: auto;
+  max-height: none;
+  width: 100%;
   height: auto;
   object-fit: contain;
 }
 
+/* Cover groups: the grid takes a height derived from the media aspect (--ar, set in JS)
+   so every cell is the same scale and the images cover-crop to fill them. */
+#project-page .project-shot--group.project-shot--fill {
+  grid-template-rows: repeat(var(--rows, 1), 1fr);
+  aspect-ratio: calc(var(--cols, 3) * var(--ar, 1) / var(--rows, 1));
+}
 #project-page .project-shot--group.project-shot--fill img,
 #project-page .project-shot--group.project-shot--fill video {
   width: 100%;
@@ -1375,7 +1436,7 @@ footer {
   flex-direction: column;
   justify-content: center;
   gap: var(--gap, 8px);
-  padding: 24px var(--pad-x);
+  padding: 0;
   box-sizing: border-box;
 }
 #project-page .project-shot--levels .level {
@@ -1385,10 +1446,7 @@ footer {
 }
 
 #project-page .project-shot--levels .level > * {
-  flex: 0 0 min(
-    calc((100% - (var(--cells, 6) - 1) * var(--gap, 8px)) / var(--cells, 6)),
-    calc((var(--panel-h) - 48px - (var(--rows, 1) - 1) * var(--gap, 8px)) / var(--rows, 1))
-  );
+  flex: 0 0 calc((100% - (var(--cells, 6) - 1) * var(--gap, 8px)) / var(--cells, 6));
   aspect-ratio: 1;
   min-width: 0;
 }
@@ -1406,7 +1464,9 @@ footer {
   display: grid;
   grid-template-columns: 1fr 1fr;
   width: 100%;
-  height: 100%;
+  height: auto;
+  /* Fallback until JS sets the real aspect from the loaded media ratios. */
+  aspect-ratio: 2 / 1;
   gap: 0;
 }
 
@@ -1418,26 +1478,25 @@ footer {
   display: block;
 }
 
-#project-page .project-shot--rect-pair-contain .rect-pair-inner {
-  height: auto;
-}
 #project-page .project-shot--rect-pair-contain img,
 #project-page .project-shot--rect-pair-contain video {
-  height: auto;
   object-fit: contain;
 }
 
 #project-page .project-meta-row { position: relative; }
 #project-page .project-blurb-col { position: relative; z-index: 2; }
 #project-page .meta-feature {
-  position: absolute;
-  margin: 0;
-
-  left: 0;
-  bottom: 9%;
-  width: min(30%, 430px);
+  position: relative;
+  margin: 28px 0 0;
+  width: 56%;
+  max-width: 340px;
   line-height: 0;
   pointer-events: none;
+}
+/* When a feature sits above the blurb, the feature provides the separation, so the blurb
+   doesn't need the full breathing-room gap. */
+#project-page .meta-feature + .project-meta-row {
+  margin-top: 96px;
 }
 #project-page .meta-feature img {
   position: relative;
@@ -1470,13 +1529,13 @@ footer {
   display: grid;
   grid-template-columns: repeat(var(--split-cols, 2), 1fr);
   gap: 32px;
-  padding: 24px var(--pad-x);
+  padding: 0;
 }
 
 #project-page .project-shot--split .project-shot__col {
   display: grid;
   grid-template-columns: repeat(var(--cols, 1), 1fr);
-  grid-template-rows: repeat(var(--rows, 1), 1fr);
+  grid-template-rows: auto;
   gap: 12px;
   align-items: center;
   justify-items: center;
@@ -1486,8 +1545,8 @@ footer {
 #project-page .project-shot--split img,
 #project-page .project-shot--split video {
   max-width: 100%;
-  max-height: 100%;
-  width: auto;
+  max-height: none;
+  width: 100%;
   height: auto;
   object-fit: contain;
 }
@@ -1538,7 +1597,17 @@ footer {
     scroll-margin-top: 0;
   }
 
-  #project-page .project-inner { padding: 0 var(--pad-x) 80px; }
+  #project-page .project-layout {
+    display: block;
+    max-width: none;
+    padding: 0 var(--pad-x) 80px;
+  }
+  #project-page .project-text-col {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+  }
 
   #project-page .project-title-block,
   #project-page[data-project="raufwerk"] .project-title-block {
@@ -1559,8 +1628,12 @@ footer {
   #project-page .project-hero,
   #project-page[data-project="raufwerk"] .project-hero {
     width: 100%;
-    height: 52vh;
+    height: auto;
     margin: 20px 0 0 0;
+  }
+  #project-page .project-hero-img {
+    width: 100%;
+    max-height: none;
   }
 
   #project-page .project-meta-row,
@@ -1578,7 +1651,7 @@ footer {
   }
 
   #project-page .meta-feature {
-    position: static;
+    position: relative;
     width: 70%;
     margin-top: 28px;
   }
@@ -1610,6 +1683,10 @@ footer {
     height: auto;
     object-fit: contain;
   }
+  #project-page .project-shot--group.project-shot--fill {
+    aspect-ratio: auto;
+    grid-template-rows: none;
+  }
 
   #project-page .project-shot--levels { padding: 0; }
   #project-page .project-shot--levels .level > * {
@@ -1619,6 +1696,7 @@ footer {
   #project-page .project-shot--rect-pair .rect-pair-inner {
     grid-template-columns: 1fr !important;
     height: auto;
+    aspect-ratio: auto !important;
   }
   #project-page .project-shot--rect-pair img,
   #project-page .project-shot--rect-pair video {
