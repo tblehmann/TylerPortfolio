@@ -1,10 +1,9 @@
-
 :root {
-  --bg: #FFFFFF;          /* inner panel / content background (white) */
-  --frame-bg: #F4F2EC;    /* off-white outer page behind the white panel */
+  --bg: #FFFFFF;
+  --frame-bg: #F4F2EC;
   --text: #0A0A0A;
   --accent: #FF2D00;
-  --accent-light: #FF8A75;   /* lighter red used on hover (matches archive hover) */
+  --accent-light: #FF8A75;
   --muted: #999999;
   --rule: #E2E2E2;
   --hover-bg: #F2F2F2;
@@ -16,13 +15,12 @@
   --nav-h: 72px;
   --pad-x: 48px;
 
-  /* Framed-window layout: off-white panel inset on the white page. */
-  --frame-top: 45px;          /* top gap — the menu lives here */
-  --frame-top-open: 77px;     /* project pages: menu + project nav strip below it */
-  --frame-side: 8px;          /* slight side gaps */
-  --frame-bottom: 8px;        /* slight bottom gap */
+  --frame-top: 45px;
+  --frame-top-open: 77px;
+  --frame-side: 8px;
+  --frame-bottom: 8px;
   --frame-radius: 14px;
-  /* Visible height of the project panel (slid down, bottom clipped) for full shots. */
+
   --panel-h: calc(100vh - var(--frame-top-open));
 
   --shot-max-w: 1180px;
@@ -72,15 +70,10 @@ a {
   transition: transform 1.7s var(--ease-out);
 }
 
-/* Project pages slide the whole panel DOWN (GPU transform — no layout/reflow) to
-   uncover the static nav strip behind it. Its bottom edge clips off-screen, which
-   is why there's no bottom gap on project pages. */
 .sections-container.project-open {
   transform: translateY(calc(var(--frame-top-open) - var(--frame-top)));
 }
 
-
-/* Subtle raised bevel painted over the (opaque) stacked sections. */
 .sections-container::after {
   content: '';
   position: absolute;
@@ -89,11 +82,11 @@ a {
   pointer-events: none;
   z-index: 50;
   box-shadow:
-    inset 0 4px 0 -1px rgba(255, 255, 255, 0.9),   /* top highlight rim */
-    inset 4px 0 0 -1px rgba(255, 255, 255, 0.5),    /* left highlight rim */
-    inset 0 -4px 0 -1px rgba(10, 10, 10, 0.13),      /* bottom shade rim */
-    inset -4px 0 0 -1px rgba(10, 10, 10, 0.08),      /* right shade rim */
-    inset 0 0 0 1px rgba(10, 10, 10, 0.10);          /* crisp edge line */
+    inset 0 4px 0 -1px rgba(255, 255, 255, 0.9),
+    inset 4px 0 0 -1px rgba(255, 255, 255, 0.5),
+    inset 0 -4px 0 -1px rgba(10, 10, 10, 0.13),
+    inset -4px 0 0 -1px rgba(10, 10, 10, 0.08),
+    inset 0 0 0 1px rgba(10, 10, 10, 0.10);
 }
 
 .page-section {
@@ -261,7 +254,6 @@ nav#nav {
   opacity: 1;
 }
 
-/* Lighter red on hover — but only when NOT selected; the active item keeps full red. */
 .nav-links a:not(.nav-monogram):not(.active):hover::before,
 .nav-monogram:not(.active):hover::before,
 .project-foot-link:not(.active):hover::before {
@@ -361,8 +353,6 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   pointer-events: none;
 }
 
-/* Idle "rain" canvas, behind each section's content (above its bg, below text/images).
-   Absolute so it stays inside the framed panel rather than the whole viewport. */
 .rain-canvas {
   position: absolute;
   inset: 0;
@@ -393,7 +383,7 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   flex: 1 1 0;
   min-height: 0;
   overflow: hidden;
-  border-radius: 6px;   /* subtle rounded corners (the "bevel"), no shadow */
+  border-radius: 6px;
   background-color: var(--bg);
   pointer-events: auto;
   cursor: pointer;
@@ -411,9 +401,6 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 .hero-feature:nth-child(2) { transition-delay: 0.38s; }
 .hero-feature:nth-child(3) { transition-delay: 0.51s; }
 
-/* Hover: grow the hovered card, shrink the rest. Use :has() so the shrink only kicks
-   in once a card is actually hovered — keying off :hover of the container instead would
-   briefly shrink the target card before you reach it (a double animation). */
 .hero-featured:has(.hero-feature:hover) .hero-feature { flex-grow: 0.6; }
 .hero-featured:has(.hero-feature:hover) .hero-feature:hover { flex-grow: 2.4; }
 
@@ -429,27 +416,22 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   top: 0;
   left: 0;
   right: 0;
-  /* Fixed scale (taller than the largest card) so growing the card reveals more of
-     the image instead of re-scaling it (which read as a zoom). */
+
   height: 60vh;
   background-size: cover;
   background-position: center;
 }
 
-/* Hybrid's image reads better centred in the small preview — centring the fixed image in
-   the media window shows its middle; the expanded card reveals most of it either way. */
 .hero-feature[data-project="hybrid-construction"] .hero-feature-img {
   top: 50%;
   transform: translateY(-50%);
 }
-/* L-Acoustics: shift the preview toward the centre, but only partway. */
+
 .hero-feature[data-project="l-acoustics"] .hero-feature-img {
   top: 30%;
   transform: translateY(-30%);
 }
 
-/* Off-white strip under the image: always shows the title (left-aligned); the blurb
-   reveals beneath it when the card is highlighted, growing the strip. */
 .hero-feature-info {
   flex: 0 0 auto;
   background: var(--frame-bg);
@@ -468,8 +450,6 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   color: var(--accent);
 }
 
-/* Reveal via grid-template-rows 0fr→1fr so it animates to the blurb's exact height over
-   the same 0.8s as the card's flex-grow — they finish together (no fast-snap overshoot). */
 .hero-feature-blurb-wrap {
   display: grid;
   grid-template-rows: 0fr;
@@ -578,8 +558,6 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   z-index: 3;
 }
 
-/* Only the hero's tags stack with the "Get in touch" title; the about page's
-   tags (same class) stay a simple horizontal row. */
 #hero .hero-tags {
   flex-direction: column;
   align-items: flex-start;
@@ -630,6 +608,19 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 }
 
 .hero-tags a:hover::before {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.hero-email {
+  cursor: pointer;
+}
+
+.hero-email.copied {
+  color: var(--bg);
+}
+
+.hero-email.copied::before {
   transform: scale(1);
   opacity: 1;
 }
@@ -708,7 +699,6 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   letter-spacing: 0.1em;
   color: var(--muted);
 }
-
 
 .work-layout {
   display: grid;
@@ -952,7 +942,7 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 }
 
 #project-page .project-credits {
-  margin: 30px 0 0;
+  margin: clamp(16px, 3vh, 30px) 0 0;
   font-family: var(--font-mono);
   font-size: 0.8rem;
   letter-spacing: 0.06em;
@@ -963,7 +953,7 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 #project-page .project-credits:empty { display: none; }
 
 #project-page .legal-line {
-  margin-top: 32px;
+  margin-top: clamp(16px, 3vh, 32px);
 }
 
 footer {
@@ -1008,7 +998,6 @@ footer {
     font-size: 0.74rem;
   }
 
-  /* Mobile is full-bleed white — menu/foot text goes dark again. */
   .nav-monogram,
   .nav-links a:not(.nav-monogram) {
     color: var(--text);
@@ -1060,7 +1049,6 @@ footer {
     box-shadow: none !important;
   }
 
-  /* Mobile uses the red ::after name label below; hide the desktop info strip. */
   .hero-feature-info {
     display: none;
   }
@@ -1136,9 +1124,6 @@ footer {
   }
 }
 
-/* Project nav strip — sits statically under the menu, BEHIND the panel (z-index 0
-   vs the panel's 1). It's already in place; the panel smoothly shrinking from the
-   top is what uncovers it (no slide/pop of its own). */
 .project-foot {
   position: fixed;
   left: var(--frame-side);
@@ -1149,10 +1134,7 @@ footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* Sits behind the panel (z-index 0 vs the panel's 1); the panel sliding down/up is
-     what reveals/covers it, so it must NOT fade — it's there the whole time. Content is
-     centered (not lifted) so the active link's red box clears the panel's top edge and
-     stays fully behind it when covered. */
+
   z-index: 0;
   pointer-events: none;
 }
@@ -1161,13 +1143,10 @@ footer {
   pointer-events: auto;
 }
 
-/* About reuses the strip just for the Back button — no project list. */
 .project-foot.foot-back-only .project-foot-list {
   display: none;
 }
 
-/* All projects, spread across the right of the strip to span the same width as the image
-   column below (48vw, right edge on the gutter); Back holds the left. */
 .project-foot-list {
   display: flex;
   align-items: center;
@@ -1213,36 +1192,40 @@ footer {
   scroll-margin-top: 0;
 }
 
-/* Two-column layout: fixed text on the left, images scroll on the right. The section
-   itself is the scroll container (.page-section overflow-y:auto), so the left column
-   pins with position:sticky. */
 #project-page .project-layout {
-  display: grid;
-  grid-template-columns: minmax(340px, 720px) 1fr;
-  gap: 48px;
+
+  display: block;
   padding: 0 var(--pad-x) 160px;
   box-sizing: border-box;
-  align-items: start;
 }
 
 #project-page .project-text-col {
-  position: sticky;
+
+  position: fixed;
   top: 0;
-  align-self: start;
-  /* overflow:visible so the oversized title can spill over the right column (accepted
-     overlap); the section's own overflow-x:hidden clips it at the viewport edge. */
+  left: 0;
+  width: clamp(340px, 40vw, 720px);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+
   overflow: visible;
-  padding: 28px 0 24px;
+
+  padding: clamp(16px, 3vh, 28px) 0 clamp(16px, 3vh, 24px) var(--pad-x);
   z-index: 3;
+
+  pointer-events: none;
 }
 
 #project-page .project-media-col {
   min-width: 0;
+  width: 48vw;
   max-width: 48vw;
-  justify-self: end;
-  /* 28px (the text column's top padding = title box top) + the title's cap-height leading
-     so the first image lines up with the visible top of the title letters. */
-  padding-top: calc(28px + clamp(3.2rem, 8.5vw, 12rem) * 0.1);
+
+  margin-left: auto;
+
+  padding-top: calc(clamp(16px, 3vh, 28px) + clamp(2.8rem, min(8.5vw, 13vh), 12rem) * 0.1);
 }
 
 #project-page .project-title-block {
@@ -1257,7 +1240,8 @@ footer {
   margin: 0 0 0 -0.045em;
   font-family: var(--font-condensed);
   font-weight: 700;
-  font-size: clamp(3.2rem, 8.5vw, 12rem);
+
+  font-size: clamp(2.8rem, min(8.5vw, 13vh), 12rem);
   line-height: 0.92;
   letter-spacing: 0.01em;
   color: var(--accent);
@@ -1270,7 +1254,8 @@ footer {
 
 #project-page .project-title-sub {
   display: block;
-  margin: 32px 0 0 0;
+
+  margin: clamp(14px, 3vh, 32px) 0 0 0;
   font-family: var(--font-mono);
   font-size: 0.82rem;
   font-weight: 400;
@@ -1305,23 +1290,28 @@ footer {
   padding-top: 0;
 }
 #project-page[data-project="raufwerk"] .project-blurb {
-  font-size: 0.9rem;
-  line-height: 1.55;
+  font-size: clamp(0.8rem, 1.45vh, 0.9rem);
+  line-height: 1.5;
+}
+
+#project-page[data-project="sears-catalog"] .project-blurb {
+  font-size: clamp(0.76rem, 1.35vh, 0.9rem);
+  line-height: 1.5;
 }
 
 #project-page .project-hero-img {
   display: block;
   width: 100%;
   height: auto;
-  /* Fill the column width; if the media is taller than the cap, cover-crop the centre
-     vertically rather than letterboxing or running off the page. */
+
   max-height: 80vh;
   object-fit: cover;
   object-position: center;
 }
 
 #project-page .project-meta-row {
-  margin-top: 120px;
+
+  margin-top: clamp(40px, 8vh, 120px);
   min-height: 0;
   display: block;
   padding-top: 0;
@@ -1337,8 +1327,9 @@ footer {
 
 #project-page .project-blurb {
   font-family: var(--font-mono);
-  font-size: 1rem;
-  line-height: 1.6;
+
+  font-size: clamp(0.85rem, 1.6vh, 1rem);
+  line-height: 1.55;
   color: var(--text);
 
   max-width: 960px;
@@ -1383,8 +1374,6 @@ footer {
   height: auto;
 }
 
-/* Single images/videos: cap the height so tall (portrait) ones don't dominate — the
-   media stays centered at its natural ratio. .project-shot--full opts out (e.g. a plan). */
 #project-page .project-shot--single img,
 #project-page .project-shot--single video {
   width: auto;
@@ -1418,8 +1407,6 @@ footer {
   object-fit: contain;
 }
 
-/* Cover groups: the grid takes a height derived from the media aspect (--ar, set in JS)
-   so every cell is the same scale and the images cover-crop to fill them. */
 #project-page .project-shot--group.project-shot--fill {
   grid-template-rows: repeat(var(--rows, 1), 1fr);
   aspect-ratio: calc(var(--cols, 3) * var(--ar, 1) / var(--rows, 1));
@@ -1465,7 +1452,7 @@ footer {
   grid-template-columns: 1fr 1fr;
   width: 100%;
   height: auto;
-  /* Fallback until JS sets the real aspect from the loaded media ratios. */
+
   aspect-ratio: 2 / 1;
   gap: 0;
 }
@@ -1493,10 +1480,9 @@ footer {
   line-height: 0;
   pointer-events: none;
 }
-/* When a feature sits above the blurb, the feature provides the separation, so the blurb
-   doesn't need the full breathing-room gap. */
+
 #project-page .meta-feature + .project-meta-row {
-  margin-top: 96px;
+  margin-top: clamp(28px, 4.5vh, 60px);
 }
 #project-page .meta-feature img {
   position: relative;
@@ -1553,7 +1539,6 @@ footer {
 
 @media (max-width: 768px) {
 
-  /* No framed window on phones — content goes full-bleed, nav overlaps as before. */
   .sections-container {
     top: 0;
     left: 0;
@@ -1567,8 +1552,6 @@ footer {
   .sections-container.project-open { transform: none; }
   .sections-container::after { display: none; }
 
-  /* Project nav as a fixed bar directly under the menu (no panel shrink on mobile,
-     so it overlays on top of the full-bleed panel). */
   .project-foot {
     top: var(--nav-h);
     left: 0;
@@ -1578,7 +1561,7 @@ footer {
     background: var(--bg);
     border-bottom: 1px solid var(--rule);
     z-index: 150;
-    /* No panel slide on mobile, so fade the overlay bar in/out instead. */
+
     opacity: 0;
     transition: opacity 0.25s var(--ease-out);
   }
@@ -1603,10 +1586,21 @@ footer {
     padding: 0 var(--pad-x) 80px;
   }
   #project-page .project-text-col {
+
     position: static;
+    width: auto;
+    height: auto;
+    top: auto;
+    left: auto;
     max-height: none;
     overflow: visible;
     padding: 0;
+    pointer-events: auto;
+  }
+  #project-page .project-media-col {
+    width: auto;
+    max-width: none;
+    margin-left: 0;
   }
 
   #project-page .project-title-block,

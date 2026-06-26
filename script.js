@@ -1,23 +1,18 @@
-
 const IS_MOBILE = window.matchMedia('(max-width: 768px)').matches;
 
-// ── Idle rain ────────────────────────────────────────────────────────────────
-// Inactivity (ms) before the dot-grid rain begins. Lower this to test (e.g. 5000).
 const IDLE_MS = .2 * 60 * 1000;
-// section id -> { start(), stop(), resize() } for the idle controller to drive.
 const RAIN_FIELDS = {};
 
 const SECTIONS = ['hero', 'archive', 'about'];
 const PUSH_DURATION = 800;
 const PUSH_EASING = 'cubic-bezier(0.76, 0, 0.24, 1)';
 let transitioning = false;
-// Section a project was opened from, so the back arrow can return there.
-// Defaults to 'archive' for deep-links opened straight to a project.
 let projectSourceSection = 'archive';
 
 let dotGridRaf = null;
 let dotGridStart = null;
 let dotGridStop = null;
+let dotGridSplash = null;
 
 const PROJECTS = {
   'hybrid-construction': {
@@ -169,8 +164,6 @@ function pauseProjectVideos() {
   document.querySelectorAll('#project-page video').forEach(v => { try { v.pause(); } catch (e) { } });
 }
 
-// Play only the shot currently centered in the project viewport (no UI dots —
-// just drives video autoplay as the user scrolls through the gallery).
 function observeProjectShots(section) {
   if (!section) return;
   if (projectDotsObserver) { projectDotsObserver.disconnect(); projectDotsObserver = null; }
@@ -224,8 +217,6 @@ function switchSection(targetId, opts) {
 
   transitioning = true;
 
-  // All section↔section navigation (hero / archive / about) and leaving a project use a
-  // plain crossfade — no red wipe, no slide. (Project paging uses its own wipe elsewhere.)
   const skipRed = true;
 
   const red = document.getElementById('transition-red');
@@ -243,7 +234,6 @@ function switchSection(targetId, opts) {
   next.classList.add('push-in');
   next.style.transition = 'none';
   if (skipRed) {
-    // Leave-project: no section slide. Content crossfades while the panel slides up.
     next.style.transform = 'none';
     next.style.opacity = '0';
   } else {
@@ -265,7 +255,6 @@ function switchSection(targetId, opts) {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       if (skipRed) {
-        // Crossfade the content; the panel slide-up (transform) is driven by updateNav.
         next.style.transition = 'opacity 850ms ease';
         next.style.opacity = '1';
         current.style.transition = 'opacity 850ms ease';
@@ -329,7 +318,6 @@ function openProject(slug, opts) {
   const galleryEl = document.getElementById('project-gallery');
   if (!section || !titleEl || !heroEl) return;
 
-  // Long (multi-word) titles stack one word per line; shorter names stay on one row.
   titleEl.innerHTML = data.name.length > 14 ? data.name.replace(/\s+/g, '<br>') : data.name;
   if (subEl) subEl.textContent = data.type;
   if (blurbEl) blurbEl.textContent = data.blurb;
@@ -353,7 +341,6 @@ function openProject(slug, opts) {
       lab.textContent = data.feature.label;
       fig.append(lab);
     }
-    // Place the feature above the blurb (just under the title) rather than inside the row.
     metaRow.parentNode.insertBefore(fig, metaRow);
   }
   updateProjectPager(slug);
@@ -393,8 +380,6 @@ function openProject(slug, opts) {
       const isVid = /\.(mp4|webm|mov)$/i.test(src);
       const el = document.createElement(isVid ? 'video' : 'img');
       if (isVid) {
-        // #t=0.1 + preload metadata so a paused (not-yet-centered) video still shows a
-        // frame instead of going blank, and its real dimensions load for natural sizing.
         el.src = src + '#t=0.1';
         el.loop = true;
         el.muted = true;
@@ -409,8 +394,6 @@ function openProject(slug, opts) {
       return el;
     }
 
-    // Cover grids: size the grid so every cell matches the media's aspect ratio, so the
-    // side-by-side images come out the same scale (cover-cropped to equal cells).
     function setGroupAspect(wrap, el) {
       const apply = () => {
         const w = el.naturalWidth || el.videoWidth;
@@ -459,7 +442,6 @@ function openProject(slug, opts) {
 
           pairs.forEach(p => inner.append(p.el));
           inner.style.gridTemplateColumns = pairs.map(p => p.ratio + 'fr').join(' ');
-          // Give the row one shared height (proportional columns → same scale, fills width).
           inner.style.aspectRatio = pairs.reduce((s, p) => s + p.ratio, 0).toFixed(4);
         };
         imgs.forEach(im => {
@@ -538,7 +520,6 @@ function openProject(slug, opts) {
       if (typeof item === 'string') {
         media = [item];
       } else if (item && typeof item === 'object' && !Array.isArray(item) && typeof item.src === 'string') {
-        // Single image with options, e.g. { src, full: true } to bypass the height cap.
         media = [item.src];
         fullShot = !!item.full;
       } else if (Array.isArray(item) && item.length && Array.isArray(item[0])) {
@@ -592,14 +573,11 @@ function openProject(slug, opts) {
 
   transitioning = true;
   const current = activeSection();
-  // Paging project→project is driven by pageProject()'s own red wipe; only a genuine
-  // enter (from a different section) gets the crossfade.
   const isPaging = current === section;
 
   section.classList.add('push-in');
   section.style.visibility = 'visible';
 
-  // Shrink the panel from the top (CSS drives the slide) — reveals the nav strip.
   updateNav('project-page');
 
   const dotGrid = document.getElementById('dot-grid');
@@ -613,8 +591,6 @@ function openProject(slug, opts) {
       dotGrid.style.opacity = '0';
     }
     void section.offsetHeight;
-    // Crossfade the project page in (it's opaque and on top, so it dissolves over the
-    // outgoing section) while the panel slides down — mirrors the leave fade, no morph.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         section.style.transition = 'opacity ' + FADE + 'ms ease';
@@ -651,7 +627,6 @@ function openProject(slug, opts) {
   }, FADE + 40);
 }
 
-// Build the full project list in the project nav strip once.
 (function buildProjectFootList() {
   const list = document.getElementById('project-foot-list');
   if (!list) return;
@@ -743,7 +718,7 @@ function pageProject(slug, dir) {
       const target = SECTIONS.includes(projectSourceSection) ? projectSourceSection : 'archive';
       switchSection(target);
     } else {
-      switchSection('hero');   // about / archive → home
+      switchSection('hero');
     }
   });
 })();
@@ -754,9 +729,6 @@ function updateNav(sectionId) {
 
   const isProject = sectionId === 'project-page';
   const isAbout = sectionId === 'about';
-  // Project pages and the About page both get the nav strip + panel shrink. About shows
-  // only the Back button (no project list). The panel reshape is a GPU transform that
-  // happens behind the red wipe on a section change, so it can't reflow-jank.
   const showStrip = isProject || isAbout;
   const foot = document.getElementById('project-foot');
   if (foot) {
@@ -828,9 +800,8 @@ if (canvas && !IS_MOBILE) {
   let dots = [];
   let drops = [];
 
-  // Idle rain: when raining, drops self-spawn instead of being created by clicks.
   let heroRaining = false, heroRainSpawn = 0;
-  const RAIN_MIN = 36, RAIN_VAR = 60;   // frames between drops (~0.6s–1.6s @60fps)
+  const RAIN_MIN = 36, RAIN_VAR = 60;
 
   function buildDots() {
     dots = [];
@@ -937,8 +908,9 @@ if (canvas && !IS_MOBILE) {
         } else {
           const ringR = drop.age * DROP_SPEED;
           const fade = 1 - drop.age / DROP_MAX;
+          const rw = drop.vib ? RING_WIDTH * 1.6 : RING_WIDTH;
           const dRing = Math.abs(dm2 - ringR);
-          if (dRing < RING_WIDTH) redBoost += (1 - dRing / RING_WIDTH) * fade;
+          if (dRing < rw) redBoost += (1 - dRing / rw) * fade * (drop.vib || 1);
         }
       }
       if (redBoost > 0.01) {
@@ -961,6 +933,16 @@ if (canvas && !IS_MOBILE) {
       cancelAnimationFrame(dotGridRaf);
       dotGridRaf = null;
     }
+  };
+  dotGridSplash = function (clientX, clientY, opts) {
+    opts = opts || {};
+    const rect = canvas.getBoundingClientRect();
+    drops.push({
+      x: clientX - rect.left,
+      y: clientY - rect.top,
+      age: 0,
+      vib: opts.vib || 1.5,
+    });
   };
 
   resize();
@@ -1116,8 +1098,6 @@ function setWorkActive(idx) {
     return best;
   }
 
-  // Whichever row is nearest the panel center is "active"; its image swaps in
-  // instantly (no fade — see .work-img-group in CSS).
   function updateActive() {
     const nearest = findNearestItem();
     if (!nearest) return;
@@ -1131,7 +1111,6 @@ function setWorkActive(idx) {
     updateActive();
   }
 
-  // Mouse wheel / trackpad: move 1:1 with the scroll delta. No momentum, no snap.
   container.addEventListener('wheel', e => {
     e.preventDefault();
     if (!ready || loopH <= 0) return;
@@ -1139,7 +1118,6 @@ function setWorkActive(idx) {
     render();
   }, { passive: false });
 
-  // Touch: drag 1:1, with a light inertia fling on release. Still no snap.
   let touchActive = false, lastTouchY = 0, lastTouchT = 0, touchVel = 0;
   container.addEventListener('touchstart', e => {
     if (!ready) return;
@@ -1168,7 +1146,6 @@ function setWorkActive(idx) {
     velocity = Math.max(-60, Math.min(60, touchVel));
   }, { passive: true });
 
-  // Arrow keys nudge by one row (instant), without re-introducing scroll snap.
   window.addEventListener('keydown', e => {
     if (activeSectionId() !== 'archive' || !ready || loopH <= 0) return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -1361,25 +1338,68 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 (function () {
-  document.querySelectorAll('a[data-user][data-domain]').forEach(el => {
-    const user = el.dataset.user;
-    const domain = el.dataset.domain;
-    if (!user || !domain) return;
-    const addr = user + '@' + domain;
-    el.textContent = addr;
-    el.href = 'mailto:' + addr;
+  const decode = s => s.split(',').map(n => String.fromCharCode(+n)).join('');
+
+  function splashOverEmail(el) {
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const section = el.closest('.page-section');
+    const id = section && section.id;
+    if (id === 'hero' && typeof dotGridSplash === 'function') {
+      dotGridSplash(cx, cy, { vib: 1.5 });
+    } else if (id && RAIN_FIELDS[id] && RAIN_FIELDS[id].splash) {
+      RAIN_FIELDS[id].splash(cx, cy, { vib: 1.5 });
+    }
+  }
+
+  document.querySelectorAll('.hero-email[data-e]').forEach(el => {
+    const addr = decode(el.dataset.e);
+    const label = el.textContent;
+    let resetTimer = null;
+
+    function flash(msg) {
+      el.textContent = msg;
+      el.classList.add('copied');
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => {
+        el.textContent = label;
+        el.classList.remove('copied');
+      }, 1900);
+    }
+
+    function copyAddr() {
+      const done = () => { flash('copied'); splashOverEmail(el); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(addr).then(done).catch(fallback);
+      } else {
+        fallback();
+      }
+      function fallback() {
+        const ta = document.createElement('textarea');
+        ta.value = addr;
+        ta.setAttribute('readonly', '');
+        ta.style.cssText = 'position:absolute;left:-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); }
+        catch (_) { flash(addr); }
+        document.body.removeChild(ta);
+      }
+    }
+
+    el.addEventListener('click', e => { e.preventDefault(); copyAddr(); });
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copyAddr(); }
+    });
   });
 })();
 
-// ── Idle rain on the non-hero sections ───────────────────────────────────────
-// A blank canvas that, while active, fades in a faint dot field and lets subtle
-// drops radiate ripple rings through it (same look as a hero click, fainter).
-// Fades back to nothing when stopped.
 function makeRainField(canvas) {
   if (!canvas) return null;
   const ctx = canvas.getContext('2d');
   const SPACING = 42, DROP_SPEED = 7, DROP_MAX = 90, RING_WIDTH = 30;
-  const RAIN_MIN = 36, RAIN_VAR = 60;        // frames between drops (~0.6s–1.6s @60fps)
+  const RAIN_MIN = 36, RAIN_VAR = 60;
   const RING_OPACITY = 0.7, DOT_OPACITY = 0.05;
   let raf = null, dots = [], drops = [], fade = 0, target = 0, spawn = 0;
 
@@ -1397,7 +1417,7 @@ function makeRainField(canvas) {
     fade += (target - fade) * 0.05;
     ctx.clearRect(0, 0, w, h);
 
-    if (target === 0 && fade < 0.01) { raf = null; return; }   // fully faded out → stop
+    if (target === 0 && fade < 0.01 && !drops.length) { raf = null; return; }
 
     if (target === 1) {
       spawn--;
@@ -1418,20 +1438,26 @@ function makeRainField(canvas) {
       ctx.fillStyle = 'rgba(10,10,10,' + (DOT_OPACITY * fade) + ')';
       ctx.fill();
 
-      let boost = 0;
+      let boost = 0, boostVib = 0;
       for (let j = 0, m = drops.length; j < m; j++) {
         const d = drops[j];
         const dx = dot.x - d.x, dy = dot.y - d.y;
         const dm = Math.sqrt(dx * dx + dy * dy);
+        const rw = d.vib ? RING_WIDTH * 1.6 : RING_WIDTH;
         const ringR = d.age * DROP_SPEED;
         const dRing = Math.abs(dm - ringR);
-        if (dRing < RING_WIDTH) boost += (1 - dRing / RING_WIDTH) * (1 - d.age / DROP_MAX);
+        if (dRing < rw) {
+          const b = (1 - dRing / rw) * (1 - d.age / DROP_MAX);
+          if (d.vib) boostVib += b * d.vib; else boost += b;
+        }
       }
-      if (boost > 0.01) {
-        if (boost > 1) boost = 1;
+      let ringAlpha = Math.min(1, boost) * RING_OPACITY * fade + Math.min(1, boostVib) * 0.95;
+      if (ringAlpha > 0.01) {
+        if (ringAlpha > 1) ringAlpha = 1;
+        const ringSize = Math.min(1, boost) + Math.min(1.5, boostVib);
         ctx.beginPath();
-        ctx.arc(dot.x, dot.y, 1.5 + boost * 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,45,0,' + (boost * RING_OPACITY * fade) + ')';
+        ctx.arc(dot.x, dot.y, 1.5 + ringSize * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,45,0,' + ringAlpha + ')';
         ctx.fill();
       }
     }
@@ -1441,7 +1467,19 @@ function makeRainField(canvas) {
   return {
     start() { build(); drops = []; spawn = 0; target = 1; if (!raf) raf = requestAnimationFrame(frame); },
     stop() { target = 0; },
-    resize() { if (raf) build(); }
+    resize() { if (raf) build(); },
+    splash(clientX, clientY, opts) {
+      opts = opts || {};
+      if (!dots.length) build();
+      const rect = canvas.getBoundingClientRect();
+      drops.push({
+        x: clientX - rect.left,
+        y: clientY - rect.top,
+        age: 0,
+        vib: opts.vib || 1.5,
+      });
+      if (!raf) raf = requestAnimationFrame(frame);
+    }
   };
 }
 
@@ -1457,9 +1495,6 @@ window.addEventListener('resize', () => {
   });
 });
 
-// Idle controller: any activity resets a single timer; after IDLE_MS of true
-// inactivity, rain starts on the active section. Any activity fades it out and
-// restarts the countdown. Desktop only (matches the hero dot-grid).
 (function () {
   if (IS_MOBILE) return;
   let idleTimer = null, current = null;
