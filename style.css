@@ -68,6 +68,7 @@ a {
   border-radius: var(--frame-radius);
   box-shadow: 0 24px 60px -24px rgba(10, 10, 10, 0.22);
   transition: transform 1.7s var(--ease-out);
+  transform: translateY(0);
 }
 
 .sections-container.project-open {

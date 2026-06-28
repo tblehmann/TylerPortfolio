@@ -605,6 +605,7 @@ function openProject(slug, opts) {
     section.classList.add('active');
     section.style.transition = '';
     section.style.opacity = '';
+    section.style.visibility = '';
 
     if (dotGrid) {
       dotGrid.style.transition = '';
