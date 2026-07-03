@@ -61,7 +61,7 @@ const PROJECTS = {
   'l-acoustics': {
     name: 'L-Acoustics',
     type: 'Spatialized AI · Agential Influencer',
-    blurb: 'In collaboration with L-Acoustics, this project utilizes their L-ISA spatial audio system to bring an agential AI framework to life within a mock bar exhibition space. Developed alongside Ferras, the system features a social media manager agent that monitors live activity in the room, analyzing the overall mood, tracking conversation topics, and identifying physical traits of the occupants in order to generate contextual social media content. This content is then streamed directly to Twitch to drive digital engagement and curiosity around the physical venue. Simultaneously, a second agent controls the audio mix and spatial location of that audio based on real time occupant locations and the collective room mood, establishing a continuous feedback loop. This loop transforms the installation into a performative environment, prompting visitors to intentionally interact with the system to manipulate both the music and the generated social media content to create a new kind of AI activated space.',
+    blurb: 'In collaboration with L-Acoustics, this project utilizes their L-ISA spatial audio system to bring an AI social media manager to life within a mock bar exhibition space. Developed alongside Ferras, the agent monitors live activity in the room, analyzing the overall mood, tracking conversation topics, and identifying physical traits of the occupants in order to generate contextual social media content. This content is then streamed directly to Twitch to drive digital engagement around the physical venue. Simultaneously, a second agent controls the audio mix and spatial location of that audio based on real time occupant locations and the collective room mood, establishing a continuous feedback loop. This loop turns the space into a performative environment, prompting visitors to intentionally interact with the system to manipulate both the music and the generated social media content to create a new kind of AI activated space.',
     credits: 'Instructors: Casey Rehm, Ade Ayoade · Partner: Ferras Coulibaly',
     gallery: [
       'LAccoustic/laccoustic-28.webp',
@@ -611,11 +611,6 @@ function openProject(slug, opts) {
       dotGrid.style.transition = '';
       dotGrid.style.opacity = '';
     }
-
-    const heroContent = document.querySelector('.hero-content');
-    if (heroContent) heroContent.classList.remove('is-project');
-    const heroTitleSpan = document.querySelector('.hero-title-text');
-    if (heroTitleSpan) heroTitleSpan.classList.remove('is-project');
 
     onSectionEnter('project-page');
     transitioning = false;
