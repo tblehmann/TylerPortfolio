@@ -11,6 +11,7 @@
   --font-display: 'Syne', sans-serif;
   --font-condensed: 'Barlow Condensed', sans-serif;
   --font-mono: 'DM Mono', monospace;
+  --font-blurb: 'Lora', serif;
 
   --nav-h: 72px;
   --pad-x: 48px;
@@ -136,14 +137,8 @@ a {
   overflow: hidden;
 }
 
-#archive .work-layout {
-  height: 100%;
-  align-items: stretch;
-}
-
 #archive .work-left {
-
-  padding: calc(var(--nav-h) + 48px) var(--pad-x) calc(var(--nav-h) + 48px);
+  padding: calc(var(--nav-h) + 24px) var(--pad-x) calc(var(--nav-h) + 24px);
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
@@ -163,9 +158,7 @@ a {
 }
 
 #archive .work-images {
-
-  height: calc(100% - var(--nav-h));
-  margin: var(--nav-h) 0 0;
+  height: 100%;
   position: relative;
 }
 
@@ -439,8 +432,20 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   padding: 9px 16px 10px;
 }
 
+.hero-feature-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .hero-feature-name {
   display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   text-align: left;
   font-family: var(--font-condensed);
   font-weight: 700;
@@ -449,6 +454,15 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   line-height: 1;
   text-transform: uppercase;
   color: var(--accent);
+}
+
+.hero-feature-type {
+  flex: none;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  white-space: nowrap;
 }
 
 .hero-feature-blurb-wrap {
@@ -1317,7 +1331,7 @@ footer {
 }
 
 #project-page .project-blurb {
-  font-family: var(--font-mono);
+  font-family: var(--font-blurb);
 
   font-size: clamp(0.85rem, 1.6vh, 1rem);
   line-height: 1.55;
