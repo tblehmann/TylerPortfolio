@@ -1161,7 +1161,7 @@ footer {
   display: none;
 }
 
-.project-foot-toggle {
+.project-foot .project-foot-toggle {
   display: none;
 }
 
@@ -1589,7 +1589,7 @@ footer {
   }
   .project-foot.active { opacity: 1; }
 
-  .project-foot-toggle {
+  .project-foot .project-foot-toggle {
     display: inline-flex;
     font-size: 0.7rem;
     letter-spacing: 0.1em;
