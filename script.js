@@ -636,6 +636,26 @@ function openProject(slug, opts) {
   });
 })();
 
+(function () {
+  const foot = document.getElementById('project-foot');
+  const toggle = document.getElementById('project-foot-toggle');
+  const list = document.getElementById('project-foot-list');
+  if (!foot || !toggle || !list) return;
+  function closeDropdown() {
+    foot.classList.remove('dropdown-open');
+    toggle.setAttribute('aria-expanded', 'false');
+  }
+  toggle.addEventListener('click', e => {
+    e.stopPropagation();
+    const open = foot.classList.toggle('dropdown-open');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  list.addEventListener('click', closeDropdown);
+  document.addEventListener('click', e => {
+    if (foot.classList.contains('dropdown-open') && !foot.contains(e.target)) closeDropdown();
+  });
+})();
+
 let currentProjectSlug = null;
 function updateProjectPager(slug) {
   currentProjectSlug = slug;
@@ -730,6 +750,7 @@ function updateNav(sectionId) {
   if (foot) {
     foot.classList.toggle('active', showStrip);
     foot.classList.toggle('foot-back-only', isAbout);
+    foot.classList.remove('dropdown-open');
   }
   const container = document.querySelector('.sections-container');
   if (container) container.classList.toggle('project-open', showStrip);
