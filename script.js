@@ -39,7 +39,7 @@ const PROJECTS = {
     credits: 'Instructors: Casey Rehm, Garrett Santo',
     gallery: [
 
-      'RaufWerk/raufwerk-03.webp',
+      'RaufWerk/raufwerk-01.webp',
 
       { images: ['RaufWerk/raufwerk-04.mp4', 'RaufWerk/raufwerk-02.mp4'], cols: 2, rows: 1 },
 
