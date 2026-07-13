@@ -55,6 +55,7 @@ const PROJECTS = {
       },
       'RaufWerk/raufwerk-05.mp4',
       'RaufWerk/raufwerk-06.mp4',
+      { images: ['RaufWerk/raufwerk-31.mp4', 'RaufWerk/raufwerk-32.mp4'], cols: 2, rows: 1 },
       'RaufWerk/raufwerk-25.webp'
     ]
   },
@@ -64,7 +65,7 @@ const PROJECTS = {
     blurb: 'In collaboration with L-Acoustics, this project utilizes their L-ISA spatial audio system to bring an AI social media manager to life within a mock bar exhibition space. Developed alongside Ferras, the agent monitors live activity in the room, analyzing the overall mood, tracking conversation topics, and identifying physical traits of the occupants in order to generate contextual social media content. This content is then streamed directly to Twitch to drive digital engagement around the physical venue. Simultaneously, a second agent controls the audio mix and spatial location of that audio based on real time occupant locations and the collective room mood, establishing a continuous feedback loop. This loop turns the space into a performative environment, prompting visitors to intentionally interact with the system to manipulate both the music and the generated social media content to create a new kind of AI activated space.',
     credits: 'Instructors: Casey Rehm, Ade Ayoade · Partner: Ferras Coulibaly',
     gallery: [
-      'LAccoustic/laccoustic-28.webp',
+      { layout: 'lead-split', image: 'LAccoustic/laccoustic-28.webp', video: 'LAccoustic/laccoustic-31.mp4' },
 
       {
         layout: 'rect-pair',
@@ -88,8 +89,7 @@ const PROJECTS = {
           { images: ['LAccoustic/laccoustic-20.webp', 'LAccoustic/laccoustic-21.webp', 'LAccoustic/laccoustic-22.webp', 'LAccoustic/laccoustic-23.webp', 'LAccoustic/laccoustic-24.webp'] }
         ]
       },
-      'LAccoustic/laccoustic-25.mp4',
-      'LAccoustic/laccoustic-26.mp4',
+      { images: ['LAccoustic/laccoustic-25.mp4', 'LAccoustic/laccoustic-26.mp4'], cols: 2, rows: 1 },
       'LAccoustic/laccoustic-30.webp'
     ]
   },
@@ -344,10 +344,15 @@ function openProject(slug, opts) {
     metaRow.parentNode.insertBefore(fig, metaRow);
   }
   updateProjectPager(slug);
-  const heroSrc = (data.gallery && data.gallery[0]) || '';
+  // gallery[0] is normally a single media string (the hero). If it's a layout object
+  // instead, there is no dedicated hero — the layout leads the page.
+  const heroItem = (data.gallery && data.gallery[0]);
+  const hasHero = typeof heroItem === 'string';
+  const heroSrc = hasHero ? heroItem : '';
+  if (heroEl) heroEl.style.display = hasHero ? '' : 'none';
 
   let pendingHeroVideo = null;
-  if (heroImgEl) {
+  if (heroImgEl && hasHero) {
     const heroIsVid = /\.(mp4|webm|mov)$/i.test(heroSrc);
     const want = heroIsVid ? 'video' : 'img';
     let current = heroImgEl;
@@ -414,7 +419,22 @@ function openProject(slug, opts) {
       const cols = Math.ceil(Math.sqrt(n));
       return { cols: cols, rows: Math.ceil(n / cols) };
     }
-    (data.gallery || []).slice(1).forEach(item => {
+    (data.gallery || []).slice(hasHero ? 1 : 0).forEach(item => {
+
+      if (item && typeof item === 'object' && item.layout === 'lead-split') {
+        // A lead image + video side by side: the video keeps its natural size on the
+        // right, the image fills the remaining space on the left (cover-cropped, anchored
+        // right so its left edge is what gets trimmed).
+        const wrap = document.createElement('div');
+        wrap.className = 'project-shot project-shot--lead-split reveal';
+        const img = makeMedia(item.image);
+        img.classList.add('lead-img');
+        const vid = makeMedia(item.video);
+        vid.classList.add('lead-vid');
+        wrap.append(img, vid);
+        galleryEl.append(wrap);
+        return;
+      }
 
       if (item && typeof item === 'object' && item.layout === 'rect-pair') {
         const wrap = document.createElement('div');
