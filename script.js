@@ -3,11 +3,11 @@ const IS_MOBILE = window.matchMedia('(max-width: 768px)').matches;
 const IDLE_MS = .2 * 60 * 1000;
 const RAIN_FIELDS = {};
 
-const SECTIONS = ['hero', 'archive', 'about'];
+const SECTIONS = ['home'];
 const PUSH_DURATION = 800;
 const PUSH_EASING = 'cubic-bezier(0.76, 0, 0.24, 1)';
 let transitioning = false;
-let projectSourceSection = 'archive';
+let projectSourceSection = 'home';
 
 let dotGridRaf = null;
 let dotGridStart = null;
@@ -190,7 +190,7 @@ function activeSection() {
 
 function activeSectionId() {
   const s = activeSection();
-  return s ? s.id : 'hero';
+  return s ? s.id : 'home';
 }
 
 function switchSection(targetId, opts) {
@@ -730,12 +730,7 @@ function pageProject(slug, dir) {
   back.addEventListener('click', e => {
     e.preventDefault();
     if (transitioning) return;
-    if (activeSectionId() === 'project-page') {
-      const target = SECTIONS.includes(projectSourceSection) ? projectSourceSection : 'archive';
-      switchSection(target);
-    } else {
-      switchSection('hero');
-    }
+    switchSection('home');
   });
 })();
 
@@ -754,8 +749,8 @@ function updateNav(sectionId) {
   }
   const container = document.querySelector('.sections-container');
   if (container) container.classList.toggle('project-open', showStrip);
-  nav.classList.toggle('scrolled', sectionId !== 'hero');
-  nav.classList.toggle('nav-collapsed', sectionId !== 'hero');
+  nav.classList.toggle('scrolled', sectionId !== 'home');
+  nav.classList.toggle('nav-collapsed', sectionId !== 'home');
 }
 
 function setNavActive(sectionId) {
@@ -767,7 +762,7 @@ function setNavActive(sectionId) {
 
 function onSectionEnter(sectionId) {
 
-  if (sectionId === 'hero') {
+  if (sectionId === 'home') {
     if (dotGridStart) dotGridStart();
   } else {
     if (dotGridStop) dotGridStop();
@@ -778,9 +773,6 @@ function onSectionEnter(sectionId) {
       try { v.pause(); } catch (e) { }
     });
   }
-  if (sectionId === 'archive') {
-    initWorkEntrance();
-  }
   if (sectionId === 'project-page') {
 
     const section = document.getElementById('project-page');
@@ -788,14 +780,6 @@ function onSectionEnter(sectionId) {
       section.querySelectorAll('.reveal').forEach(el => observer.observe(el));
     }
   }
-
-  SECTIONS.forEach(id => {
-    if (id !== sectionId && id !== 'hero') {
-      document.querySelectorAll('#' + id + ' .reveal').forEach(el => {
-        el.classList.remove('visible');
-      });
-    }
-  });
 }
 
 const canvas = document.getElementById('dot-grid');
@@ -812,6 +796,7 @@ if (canvas && !IS_MOBILE) {
   const DROP_SPEED = 7;
   const DROP_MAX = 90;
   const RING_WIDTH = 30;
+  const REVEAL_DECAY = 0.95;
 
   let gridMX = -9999, gridMY = -9999;
   let dots = [];
@@ -829,7 +814,7 @@ if (canvas && !IS_MOBILE) {
 
         const ddx = x - cx, ddy = y - cy;
         const dc = Math.sqrt(ddx * ddx + ddy * ddy);
-        dots.push({ x, y, energy: 0, centerPhase: dc * 0.018 });
+        dots.push({ x, y, energy: 0, reveal: 0, centerPhase: dc * 0.018 });
       }
   }
 
@@ -839,7 +824,7 @@ if (canvas && !IS_MOBILE) {
     buildDots();
   }
 
-  const hero = document.getElementById('hero');
+  const hero = document.getElementById('home');
   hero.addEventListener('mousemove', e => {
     const rect = canvas.getBoundingClientRect();
     gridMX = e.clientX - rect.left;
@@ -895,43 +880,53 @@ if (canvas && !IS_MOBILE) {
       }
       dot.energy *= DECAY_RATE;
 
-      const base = Math.sin(dot.centerPhase - t) * 0.5 + 0.5;
+      // red influence from active drops/waves — drives when a dot is revealed
+      let redBoost = 0;
+      if (hasDrops) {
+        for (let j = 0, m = drops.length; j < m; j++) {
+          const drop = drops[j];
+          if (drop.isLinear) {
+            const waveY = h - drop.age * drop.speed;
+            if (dot.y >= waveY) redBoost += 1;
+            continue;
+          }
 
-      let alpha = 0.03 + base * 0.055 + dot.energy * 0.10;
-      if (alpha > 0.16) alpha = 0.16;
+          const dx2 = dot.x - drop.x, dy2 = dot.y - drop.y;
+          const dm2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+          if (drop.isFlash) {
+            const ringR = drop.age * drop.speed;
+            if (dm2 < ringR) redBoost += 1;
+          } else {
+            const ringR = drop.age * DROP_SPEED;
+            const fade = 1 - drop.age / DROP_MAX;
+            const rw = drop.vib ? RING_WIDTH * 1.6 : RING_WIDTH;
+            const dRing = Math.abs(dm2 - ringR);
+            if (dRing < rw) redBoost += (1 - dRing / rw) * fade * (drop.vib || 1);
+          }
+        }
+        if (redBoost > 1) redBoost = 1;
+      }
+
+      // reveal envelope: the black grid ripples in behind the red, then fades out
+      if (redBoost > dot.reveal) dot.reveal = redBoost;
+      else dot.reveal *= REVEAL_DECAY;
+
+      const base = Math.sin(dot.centerPhase - t) * 0.5 + 0.5;
       const r = 1.5 + base * 0.7 + dot.energy * 1.4;
 
-      ctx.beginPath();
-      ctx.arc(dot.x, dot.y, r, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(10,10,10,' + alpha + ')';
-      ctx.fill();
-
-      if (!hasDrops) continue;
-      let redBoost = 0;
-      for (let j = 0, m = drops.length; j < m; j++) {
-        const drop = drops[j];
-        if (drop.isLinear) {
-          const waveY = h - drop.age * drop.speed;
-          if (dot.y >= waveY) redBoost += 1;
-          continue;
-        }
-
-        const dx2 = dot.x - drop.x, dy2 = dot.y - drop.y;
-        const dm2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-
-        if (drop.isFlash) {
-          const ringR = drop.age * drop.speed;
-          if (dm2 < ringR) redBoost += 1;
-        } else {
-          const ringR = drop.age * DROP_SPEED;
-          const fade = 1 - drop.age / DROP_MAX;
-          const rw = drop.vib ? RING_WIDTH * 1.6 : RING_WIDTH;
-          const dRing = Math.abs(dm2 - ringR);
-          if (dRing < rw) redBoost += (1 - dRing / rw) * fade * (drop.vib || 1);
-        }
+      // black dot — only visible where recently revealed by a red drop
+      if (dot.reveal > 0.004) {
+        let baseAlpha = 0.03 + base * 0.055 + dot.energy * 0.10;
+        if (baseAlpha > 0.16) baseAlpha = 0.16;
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(10,10,10,' + (baseAlpha * dot.reveal) + ')';
+        ctx.fill();
       }
+
+      // red drop overlay
       if (redBoost > 0.01) {
-        if (redBoost > 1) redBoost = 1;
         ctx.beginPath();
         ctx.arc(dot.x, dot.y, r + redBoost * 2.5, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(255,45,0,' + (redBoost * 0.88) + ')';
@@ -970,7 +965,7 @@ if (canvas && !IS_MOBILE) {
     dotGridStart();
   });
 
-  RAIN_FIELDS['hero'] = {
+  RAIN_FIELDS['home'] = {
     start() { heroRaining = true; heroRainSpawn = 0; },
     stop() { heroRaining = false; }
   };
@@ -980,7 +975,7 @@ if (canvas && !IS_MOBILE) {
 
 (function () {
   const wrap = document.getElementById('hero-featured');
-  const heroSection = document.getElementById('hero');
+  const heroSection = document.getElementById('home');
   if (!wrap || !heroSection) return;
 
   const tiles = [...wrap.querySelectorAll('.hero-feature')];
@@ -988,6 +983,37 @@ if (canvas && !IS_MOBILE) {
     const images = (tile.dataset.images || '').split('|').map(s => s.trim()).filter(Boolean);
     const img = tile.querySelector('.hero-feature-img');
     if (img && images[0]) img.style.backgroundImage = 'url("' + images[0] + '")';
+
+    const videoSrc = (tile.dataset.video || '').trim();
+    if (!videoSrc) return;
+    const media = tile.querySelector('.hero-feature-media');
+    if (!media) return;
+
+    let video = null;
+    const ensureVideo = () => {
+      if (video) return video;
+      video = document.createElement('video');
+      video.className = 'hero-feature-video';
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.preload = 'none';
+      video.src = videoSrc;
+      media.appendChild(video);
+      return video;
+    };
+
+    tile.addEventListener('mouseenter', () => {
+      const v = ensureVideo();
+      const p = v.play();
+      if (p && p.catch) p.catch(() => {});
+      requestAnimationFrame(() => v.classList.add('ready'));
+    });
+    tile.addEventListener('mouseleave', () => {
+      if (!video) return;
+      video.classList.remove('ready');
+      video.pause();
+    });
   });
 
   requestAnimationFrame(() => heroSection.classList.add('featured-ready'));
@@ -1237,39 +1263,38 @@ document.querySelectorAll('.nav-links a, .nav-monogram').forEach(link => {
     const section = link.dataset.section;
     if (!section) return;
     e.preventDefault();
-    if (section === activeSectionId()) return;
-    switchSection(section);
+    const home = document.getElementById('home');
+    if (activeSectionId() !== 'home') switchSection('home');
+    requestAnimationFrame(() => {
+      if (section === 'home') {
+        home.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        const target = document.getElementById(section);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+});
+
+document.querySelectorAll('[data-nav="about"]').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    if (transitioning) return;
+    if (activeSectionId() !== 'about') switchSection('about');
   });
 });
 
 document.addEventListener('click', e => {
   const trigger = e.target.closest && e.target.closest('[data-project]');
   if (!trigger) return;
-  const fromHero = !!trigger.closest('#hero');
-  const fromArchive = !!trigger.closest('#archive');
-  if (!fromHero && !fromArchive) return;
+  if (!trigger.closest('#home')) return;
   const slug = trigger.dataset.project;
   if (!slug || !PROJECTS[slug]) return;
   e.preventDefault();
   if (transitioning) return;
 
-  projectSourceSection = fromHero ? 'hero' : 'archive';
-
-  let sourceImg = null;
-  let sourceTitle = null;
-  let sourceSub = null;
-  if (fromHero) {
-    sourceImg = trigger.querySelector('.hero-feature-img');
-    sourceTitle = document.querySelector('.hero-title-text');
-    sourceSub = document.querySelector('.hero-role-text');
-  } else if (fromArchive) {
-    const idx = trigger.closest('.work-item') && trigger.closest('.work-item').dataset.index;
-    const group = idx != null ? document.querySelector('#archive .work-img-group[data-index="' + idx + '"]') : null;
-    sourceImg = group ? group.querySelector('.work-img') : null;
-    sourceTitle = trigger.querySelector('.work-name');
-    sourceSub = trigger.querySelector('.work-type');
-  }
-  openProject(slug, { sourceImg: sourceImg, sourceTitle: sourceTitle, sourceSub: sourceSub });
+  projectSourceSection = 'home';
+  openProject(slug, {});
 });
 
 (function () {
@@ -1312,21 +1337,14 @@ document.addEventListener('click', e => {
 
 (function () {
   const hash = location.hash.replace('#', '');
-  if (hash && SECTIONS.includes(hash) && hash !== 'hero') {
-    const heroSection = document.getElementById('hero');
-    const target = document.getElementById(hash);
-    heroSection.classList.remove('active');
-    target.classList.add('active');
-    updateNav(hash);
-
-    target.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
-    if (hash === 'archive') initWorkEntrance();
-  } else if (hash && PROJECTS[hash]) {
-
+  if (hash && PROJECTS[hash]) {
     openProject(hash);
+  } else if (hash === 'work' || hash === 'about') {
+    const target = document.getElementById(hash);
+    if (target) requestAnimationFrame(() => target.scrollIntoView({ block: 'start' }));
+    setNavActive('home');
   } else {
-
-    setNavActive('hero');
+    setNavActive('home');
   }
 })();
 
@@ -1343,13 +1361,13 @@ const observer = new IntersectionObserver(entries => {
 });
 
 document.querySelectorAll('.reveal').forEach(el => {
-  if (!el.closest('#hero')) {
+  if (!el.closest('.home-intro')) {
     observer.observe(el);
   }
 });
 
 window.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('#hero .reveal').forEach((el, i) => {
+  document.querySelectorAll('.home-intro .reveal').forEach((el, i) => {
     setTimeout(() => el.classList.add('visible'), 200 + i * 160);
   });
 });
@@ -1361,13 +1379,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const r = el.getBoundingClientRect();
     const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
-    const section = el.closest('.page-section');
-    const id = section && section.id;
-    if (id === 'hero' && typeof dotGridSplash === 'function') {
-      dotGridSplash(cx, cy, { vib: 1.5 });
-    } else if (id && RAIN_FIELDS[id] && RAIN_FIELDS[id].splash) {
-      RAIN_FIELDS[id].splash(cx, cy, { vib: 1.5 });
-    }
+    if (window.fullSplash) window.fullSplash(cx, cy);
   }
 
   document.querySelectorAll('.hero-email[data-e]').forEach(el => {
@@ -1500,7 +1512,7 @@ function makeRainField(canvas) {
   };
 }
 
-['archive', 'about', 'project-page'].forEach(id => {
+['project-page'].forEach(id => {
   const section = document.getElementById(id);
   const field = makeRainField(section && section.querySelector('.rain-canvas'));
   if (field) RAIN_FIELDS[id] = field;
@@ -1528,4 +1540,80 @@ window.addEventListener('resize', () => {
   ['mousemove', 'wheel', 'keydown', 'touchstart', 'touchmove', 'pointerdown'].forEach(ev =>
     window.addEventListener(ev, reset, { passive: true }));
   reset();
+})();
+
+// Full-viewport ripple splash that draws on top of everything (e.g. email click)
+(function () {
+  const SPACING = 42, DROP_SPEED = 11, DROP_MAX = 64, RING_WIDTH = 30, REVEAL_DECAY = 0.92;
+  let canvas = null, ctx = null, dots = [], W = 0, H = 0, drop = null, raf = null;
+
+  function buildDots() {
+    dots = [];
+    for (let x = SPACING * 0.5; x < W; x += SPACING)
+      for (let y = SPACING * 0.5; y < H; y += SPACING)
+        dots.push({ x: x, y: y, reveal: 0 });
+  }
+  function resize() {
+    if (!canvas) return;
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    buildDots();
+  }
+  function ensure() {
+    if (canvas) return;
+    canvas = document.createElement('canvas');
+    canvas.setAttribute('aria-hidden', 'true');
+    canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
+    document.body.appendChild(canvas);
+    ctx = canvas.getContext('2d');
+    resize();
+    window.addEventListener('resize', resize);
+  }
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+    if (drop) {
+      drop.age++;
+      if (drop.age > DROP_MAX) drop = null;
+    }
+    let alive = false;
+    for (let i = 0, n = dots.length; i < n; i++) {
+      const d = dots[i];
+      let redBoost = 0;
+      if (drop) {
+        const dx = d.x - drop.x, dy = d.y - drop.y;
+        const dm = Math.sqrt(dx * dx + dy * dy);
+        const ringR = drop.age * DROP_SPEED;
+        const fade = 1 - drop.age / DROP_MAX;
+        const dRing = Math.abs(dm - ringR);
+        const rw = RING_WIDTH * 1.6;
+        if (dRing < rw) redBoost = (1 - dRing / rw) * fade * 1.5;
+        if (redBoost > 1) redBoost = 1;
+      }
+      if (redBoost > d.reveal) d.reveal = redBoost; else d.reveal *= REVEAL_DECAY;
+      if (d.reveal > 0.004) {
+        alive = true;
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, 1.6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(10,10,10,' + (0.14 * d.reveal) + ')';
+        ctx.fill();
+      }
+      if (redBoost > 0.01) {
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, 1.6 + redBoost * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,45,0,' + (redBoost * 0.88) + ')';
+        ctx.fill();
+      }
+    }
+    if (drop || alive) {
+      raf = requestAnimationFrame(frame);
+    } else {
+      raf = null;
+      ctx.clearRect(0, 0, W, H);
+    }
+  }
+  window.fullSplash = function (cx, cy) {
+    ensure();
+    drop = { x: cx, y: cy, age: 0 };
+    if (!raf) raf = requestAnimationFrame(frame);
+  };
 })();

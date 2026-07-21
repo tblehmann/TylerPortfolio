@@ -20,32 +20,43 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700&family=Syne:wght@700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Lora&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=238">
+  <link rel="stylesheet" href="style.css?v=254">
 </head>
 
 <body>
 
   <nav id="nav">
     <div class="nav-lead">
-      <a href="#hero" class="nav-monogram" data-section="hero" aria-label="Tyler Lehmann — home"><span class="ml"
+      <a href="#home" class="nav-monogram" data-section="home" aria-label="Tyler Lehmann — home"><span class="ml"
           data-keep>T</span><span class="ml">Y</span><span class="ml">L</span><span class="ml">E</span><span
           class="ml">R</span><span class="ml ml-space">&nbsp;</span><span class="ml" data-keep>L</span><span
           class="ml">E</span><span class="ml">H</span><span class="ml">M</span><span class="ml">A</span><span
           class="ml">N</span><span class="ml">N</span></a>
     </div>
     <div class="nav-links">
-      <a href="#archive" data-section="archive">Archive</a>
-      <a href="#about" data-section="about">About</a>
+      <a class="hero-email" role="button" tabindex="0" aria-label="Copy email address to clipboard"
+        data-e="116,121,108,101,104,109,97,110,110,48,48,64,103,109,97,105,108,46,99,111,109">Email</a>
+      <a href="https://www.linkedin.com/in/tyler-lehmann-0909412b5" target="_blank" rel="noopener">LinkedIn</a>
     </div>
   </nav>
 
   <div class="sections-container">
 
-    <section id="hero" class="page-section active">
+        <section id="home" class="page-section active">
       <canvas id="dot-grid" aria-hidden="true"></canvas>
 
-      <div class="hero-featured" id="hero-featured">
+      <div class="home-layout">
+        <div class="home-intro">
+          <p class="hero-intro reveal">I'm Tyler,<br class="mb"> an <span class="hero-role-accent">architectural
+            technologist</span>,<br class="mb"> looking to bring emerging <span
+            class="hero-strong">technologies</span><br class="mb"> into the <span
+            class="hero-strong">architectural</span> practice.</p>
+        </div>
+
+        <aside class="home-right">
+          <div class="hero-featured" id="hero-featured">
         <div class="hero-feature" data-project="hybrid-construction" data-name="Hybrid Construction"
+          data-video="HybridConstruction/hybrid-08.mp4"
           data-images="HybridConstruction/hybrid-09.webp|HybridConstruction/hybrid-05.webp|HybridConstruction/hybrid-11.webp|HybridConstruction/hybrid-04.webp|HybridConstruction/hybrid-02.webp">
           <div class="hero-feature-media">
             <div class="hero-feature-img"></div>
@@ -62,7 +73,8 @@
           </div>
         </div>
         <div class="hero-feature" data-project="raufwerk" data-name="RaufWerk"
-          data-images="RaufWerk/raufwerk-01.webp|RaufWerk/raufwerk-13.webp|RaufWerk/raufwerk-18.webp|RaufWerk/raufwerk-07.webp|RaufWerk/raufwerk-08.webp">
+          data-video="RaufWerk/raufwerk-06.mp4"
+          data-images="RaufWerk/raufwerk-06-poster.webp|RaufWerk/raufwerk-13.webp|RaufWerk/raufwerk-18.webp|RaufWerk/raufwerk-07.webp|RaufWerk/raufwerk-08.webp">
           <div class="hero-feature-media">
             <div class="hero-feature-img"></div>
           </div>
@@ -77,6 +89,7 @@
           </div>
         </div>
         <div class="hero-feature" data-project="l-acoustics" data-name="L&#8209;Acoustics"
+          data-video="LAccoustic/laccoustic-31.mp4"
           data-images="LAccoustic/laccoustic-28.webp|LAccoustic/laccoustic-04.webp|LAccoustic/laccoustic-29.webp|LAccoustic/laccoustic-27.webp|LAccoustic/laccoustic-03.webp">
           <div class="hero-feature-media">
             <div class="hero-feature-img"></div>
@@ -92,158 +105,46 @@
           </div>
         </div>
       </div>
+        </aside>
 
-      <div class="hero-content">
-        <p class="hero-intro reveal">Hi! I'm Tyler,<br class="mb"> an <span class="hero-role-accent">architectural
-            technologist</span>,<br class="mb"> looking to bring emerging <span
-            class="hero-strong">technologies</span><br class="mb"> into the <span
-            class="hero-strong">architectural</span> practice.</p>
-      </div>
-      <div class="hero-tags reveal">
-        <span class="hero-tags-title">Get in touch</span>
-        <div class="hero-tags-row">
-          <a class="hero-email" role="button" tabindex="0" aria-label="Copy email address to clipboard"
-            data-e="116,121,108,101,104,109,97,110,110,48,48,64,103,109,97,105,108,46,99,111,109">email</a>
-          <span class="sep">·</span>
-          <a href="https://www.linkedin.com/in/tyler-lehmann-0909412b5" target="_blank" rel="noopener">LinkedIn</a>
-        </div>
-      </div>
-    </section>
-
-    <section id="archive" class="page-section">
-      <canvas class="rain-canvas" aria-hidden="true"></canvas>
-      <div class="work-layout">
-        <div class="work-left">
-          <ul class="work-list">
-            <li class="work-item" data-index="0">
-              <a href="#hybrid-construction" data-project="hybrid-construction" class="work-item-link">
-                <div class="work-row">
-                  <h2 class="work-name">Hybrid Construction</h2>
-                  <span class="work-type">Automation</span>
-                </div>
-              </a>
-            </li>
-            <li class="work-item" data-index="1">
-              <a href="#raufwerk" data-project="raufwerk" class="work-item-link">
-                <div class="work-row">
-                  <h2 class="work-name">RaufWerk</h2>
-                  <span class="work-type">AI Augmented Design · Product</span>
-                </div>
-              </a>
-            </li>
-            <li class="work-item" data-index="2">
-              <a href="#l-acoustics" data-project="l-acoustics" class="work-item-link">
-                <div class="work-row">
-                  <h2 class="work-name">L-Acoustics</h2>
-                  <span class="work-type">Spatialized AI · Agential Influencer</span>
-                </div>
-              </a>
-            </li>
-            <li class="work-item" data-index="3">
-              <a href="#sears-catalog" data-project="sears-catalog" class="work-item-link">
-                <div class="work-row">
-                  <h2 class="work-name">Sears Catalog</h2>
-                  <span class="work-type">Architecture · Reuse</span>
-                </div>
-              </a>
-            </li>
-            <li class="work-item" data-index="4">
-              <a href="#combinatory-form" data-project="combinatory-form" class="work-item-link">
-                <div class="work-row">
-                  <h2 class="work-name">Combinatory Form</h2>
-                  <span class="work-type">Computational Design</span>
-                </div>
-              </a>
-            </li>
-            <li class="work-item" data-index="5">
-              <a href="#hippotherapy" data-project="hippotherapy" class="work-item-link">
-                <div class="work-row">
-                  <h2 class="work-name">HippoTherapy</h2>
-                  <span class="work-type">Architecture · Healthcare</span>
-                </div>
-              </a>
-            </li>
-            <li class="work-item" data-index="6">
-              <a href="#urban-farming" data-project="urban-farming" class="work-item-link">
-                <div class="work-row">
-                  <h2 class="work-name">Urban Farming</h2>
-                  <span class="work-type">Architecture · Urbanism</span>
-                </div>
-              </a>
-            </li>
-          </ul>
+        <div id="work" class="home-grid">
+          <a class="archive-card" href="#sears-catalog" data-project="sears-catalog">
+            <div class="archive-card-img" style="background-image:url('Sears/sears-07.webp');"></div>
+            <div class="archive-card-caption">
+              <h2 class="archive-card-title">Sears Catalog</h2>
+              <span class="archive-card-type">Architecture · Reuse</span>
+            </div>
+          </a>
+          <a class="archive-card" href="#urban-farming" data-project="urban-farming">
+            <div class="archive-card-img" style="background-image:url('UrbanFarming/urbanfarming-02.webp');"></div>
+            <div class="archive-card-caption">
+              <h2 class="archive-card-title">Urban Farming</h2>
+              <span class="archive-card-type">Architecture · Urbanism</span>
+            </div>
+          </a>
+          <a class="archive-card" href="#hippotherapy" data-project="hippotherapy">
+            <div class="archive-card-img" style="background-image:url('HippoTherapy/hippotherapy-02.webp');"></div>
+            <div class="archive-card-caption">
+              <h2 class="archive-card-title">HippoTherapy</h2>
+              <span class="archive-card-type">Architecture · Healthcare</span>
+            </div>
+          </a>
+          <a class="archive-card" href="#combinatory-form" data-project="combinatory-form">
+            <div class="archive-card-img" style="background-image:url('CombinatoryForm/combinatory-01.webp');"></div>
+            <div class="archive-card-caption">
+              <h2 class="archive-card-title">Combinatory Form</h2>
+              <span class="archive-card-type">Computational Design</span>
+            </div>
+          </a>
         </div>
 
-        <div class="work-images">
-          <div class="work-img-group" data-index="0">
-            <div class="work-img p1 s1"
-              style="background: url('HybridConstruction/hybrid-09.webp') center/cover no-repeat;"></div>
-            <div class="work-img p1 s2"
-              style="background: url('HybridConstruction/hybrid-04.webp') center/cover no-repeat;"></div>
-            <div class="work-img p1 s3"
-              style="background: url('HybridConstruction/hybrid-05.webp') center/cover no-repeat;"></div>
-          </div>
-          <div class="work-img-group" data-index="1">
-            <div class="work-img p2 s1" style="background: url('RaufWerk/raufwerk-03.webp') center/cover no-repeat;">
-            </div>
-            <div class="work-img p2 s2" style="background: url('RaufWerk/raufwerk-07.webp') center/cover no-repeat;">
-            </div>
-            <div class="work-img p2 s3" style="background: url('RaufWerk/raufwerk-01.webp') center/cover no-repeat;">
-            </div>
-          </div>
-          <div class="work-img-group" data-index="2">
-            <div class="work-img p3 s1"
-              style="background: url('LAccoustic/laccoustic-28.webp') center/cover no-repeat;"></div>
-            <div class="work-img p3 s2"
-              style="background: url('LAccoustic/laccoustic-04.webp') center/cover no-repeat;">
-            </div>
-            <div class="work-img p3 s3"
-              style="background: url('LAccoustic/laccoustic-03.webp') center/cover no-repeat;">
-            </div>
-          </div>
-          <div class="work-img-group" data-index="3">
-            <div class="work-img p4 s1" style="background: url('Sears/sears-07.webp') center/cover no-repeat;"></div>
-            <div class="work-img p4 s2" style="background: url('Sears/sears-02.webp') center/cover no-repeat;"></div>
-            <div class="work-img p4 s3" style="background: url('Sears/sears-08.webp') center/cover no-repeat;">
-            </div>
-          </div>
-          <div class="work-img-group" data-index="4">
-            <div class="work-img p5 s1"
-              style="background: url('CombinatoryForm/combinatory-03.webp') center/cover no-repeat;"></div>
-            <div class="work-img p5 s2"
-              style="background: url('CombinatoryForm/combinatory-02.webp') center/cover no-repeat;"></div>
-            <div class="work-img p5 s3"
-              style="background: url('CombinatoryForm/combinatory-01.webp') center/cover no-repeat;"></div>
-          </div>
-          <div class="work-img-group" data-index="5">
-            <div class="work-img p6 s1"
-              style="background: url('HippoTherapy/hippotherapy-02.webp') center/cover no-repeat;"></div>
-            <div class="work-img p6 s2"
-              style="background: url('HippoTherapy/hippotherapy-03.webp') center/cover no-repeat;"></div>
-            <div class="work-img p6 s3"
-              style="background: url('HippoTherapy/hippotherapy-04.webp') center/cover no-repeat;"></div>
-          </div>
-          <div class="work-img-group" data-index="6">
-            <div class="work-img p7 s1"
-              style="background: url('UrbanFarming/urbanfarming-02.webp') center/cover no-repeat;"></div>
-            <div class="work-img p7 s2"
-              style="background: url('UrbanFarming/urbanfarming-04.webp') center/cover no-repeat;"></div>
-            <div class="work-img p7 s3"
-              style="background: url('UrbanFarming/urbanfarming-05.webp') center/cover no-repeat;"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="about" class="page-section">
-      <canvas class="rain-canvas" aria-hidden="true"></canvas>
-
-      <div class="section-header reveal">
+        <div id="about" class="home-about">
+          <div class="section-header reveal">
         <span class="section-label">About</span>
       </div>
       <div class="about-grid">
         <div class="about-bio reveal">
-          <p>Hi! I'm an architectural technologist working at the intersection of emerging technologies and the
+          <p>I'm an architectural technologist working at the intersection of emerging technologies and the
             architectural practice. My work focuses on rapid custom tooling, automation, advanced workflows, and
             digital fabrication. I'm looking to help bridge the gap between the current architecture practice and the
             tools available to us in order to design, detail, and build better buildings.</p>
@@ -263,17 +164,12 @@
         </div>
       </div>
 
-      <p class="legal-line reveal">© 2026. All trademarks and logos are the property of their respective owners.</p>
-
-      <div class="hero-tags reveal">
-        <a class="hero-email" role="button" tabindex="0" aria-label="Copy email address to clipboard"
-          data-e="116,121,108,101,104,109,97,110,110,48,48,64,103,109,97,105,108,46,99,111,109">email</a>
-        <span class="sep">·</span>
-        <a href="https://www.linkedin.com/in/tyler-lehmann-0909412b5" target="_blank" rel="noopener">LinkedIn</a>
+      <p class="legal-line reveal">© 2026 Tyler Lehmann. All trademarks and logos are the property of their respective owners.</p>
+        </div>
       </div>
     </section>
 
-    <section id="project-page" class="page-section">
+<section id="project-page" class="page-section">
 
       <canvas class="rain-canvas" aria-hidden="true"></canvas>
 
@@ -289,7 +185,7 @@
             <div class="project-blurb-col">
               <p class="project-blurb" id="project-blurb-text"></p>
               <p class="project-credits" id="project-credits-text"></p>
-              <p class="legal-line">© 2026. All trademarks and logos are the property of their respective owners.</p>
+              <p class="legal-line">© 2026 Tyler Lehmann. All trademarks and logos are the property of their respective owners.</p>
             </div>
           </div>
         </div>
