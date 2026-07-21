@@ -55,6 +55,7 @@ const PROJECTS = {
       },
       'RaufWerk/raufwerk-05.mp4',
       'RaufWerk/raufwerk-06.mp4',
+      { images: ['RaufWerk/raufwerk-31.mp4', 'RaufWerk/raufwerk-32.mp4'], cols: 2, rows: 1 },
       'RaufWerk/raufwerk-25.webp'
     ]
   },
@@ -64,7 +65,7 @@ const PROJECTS = {
     blurb: 'In collaboration with L-Acoustics, this project utilizes their L-ISA spatial audio system to bring an AI social media manager to life within a mock bar exhibition space. Developed alongside Ferras, the agent monitors live activity in the room, analyzing the overall mood, tracking conversation topics, and identifying physical traits of the occupants in order to generate contextual social media content. This content is then streamed directly to Twitch to drive digital engagement around the physical venue. Simultaneously, a second agent controls the audio mix and spatial location of that audio based on real time occupant locations and the collective room mood, establishing a continuous feedback loop. This loop turns the space into a performative environment, prompting visitors to intentionally interact with the system to manipulate both the music and the generated social media content to create a new kind of AI activated space.',
     credits: 'Instructors: Casey Rehm, Ade Ayoade · Partner: Ferras Coulibaly',
     gallery: [
-      'LAccoustic/laccoustic-28.webp',
+      { layout: 'lead-split', image: 'LAccoustic/laccoustic-28.webp', video: 'LAccoustic/laccoustic-34.mp4' },
 
       {
         layout: 'rect-pair',
@@ -88,8 +89,7 @@ const PROJECTS = {
           { images: ['LAccoustic/laccoustic-20.webp', 'LAccoustic/laccoustic-21.webp', 'LAccoustic/laccoustic-22.webp', 'LAccoustic/laccoustic-23.webp', 'LAccoustic/laccoustic-24.webp'] }
         ]
       },
-      'LAccoustic/laccoustic-25.mp4',
-      'LAccoustic/laccoustic-26.mp4',
+      { images: ['LAccoustic/laccoustic-25.mp4', 'LAccoustic/laccoustic-26.mp4'], cols: 2, rows: 1 },
       'LAccoustic/laccoustic-30.webp'
     ]
   },
@@ -344,10 +344,15 @@ function openProject(slug, opts) {
     metaRow.parentNode.insertBefore(fig, metaRow);
   }
   updateProjectPager(slug);
-  const heroSrc = (data.gallery && data.gallery[0]) || '';
+  // gallery[0] is normally a single media string (the hero). If it's a layout object
+  // instead, there is no dedicated hero — the layout leads the page.
+  const heroItem = (data.gallery && data.gallery[0]);
+  const hasHero = typeof heroItem === 'string';
+  const heroSrc = hasHero ? heroItem : '';
+  if (heroEl) heroEl.style.display = hasHero ? '' : 'none';
 
   let pendingHeroVideo = null;
-  if (heroImgEl) {
+  if (heroImgEl && hasHero) {
     const heroIsVid = /\.(mp4|webm|mov)$/i.test(heroSrc);
     const want = heroIsVid ? 'video' : 'img';
     let current = heroImgEl;
@@ -414,7 +419,22 @@ function openProject(slug, opts) {
       const cols = Math.ceil(Math.sqrt(n));
       return { cols: cols, rows: Math.ceil(n / cols) };
     }
-    (data.gallery || []).slice(1).forEach(item => {
+    (data.gallery || []).slice(hasHero ? 1 : 0).forEach(item => {
+
+      if (item && typeof item === 'object' && item.layout === 'lead-split') {
+        // A lead image + video side by side: the video keeps its natural size on the
+        // right, the image fills the remaining space on the left (cover-cropped, anchored
+        // right so its left edge is what gets trimmed).
+        const wrap = document.createElement('div');
+        wrap.className = 'project-shot project-shot--lead-split reveal';
+        const img = makeMedia(item.image);
+        img.classList.add('lead-img');
+        const vid = makeMedia(item.video);
+        vid.classList.add('lead-vid');
+        wrap.append(img, vid);
+        galleryEl.append(wrap);
+        return;
+      }
 
       if (item && typeof item === 'object' && item.layout === 'rect-pair') {
         const wrap = document.createElement('div');
@@ -1020,244 +1040,6 @@ if (canvas && !IS_MOBILE) {
   setTimeout(() => { tiles.forEach(t => { t.style.transitionDelay = '0s'; }); }, 1200);
 })();
 
-let heroTriggered = false;
-
-function heroToWorkTransition(opts) {
-  if (heroTriggered || transitioning) return;
-  heroTriggered = true;
-  transitioning = true;
-
-  if (!opts || !opts.fromClick) window.dispatchEvent(new Event('hero-linear-flash'));
-
-  updateNav('archive');
-
-  const heroSection = document.getElementById('hero');
-  const workSection = document.getElementById('archive');
-
-  workItems.forEach(item => {
-    item.style.transition = 'none';
-    item.style.opacity = '1';
-    item.style.transform = 'translateY(0)';
-  });
-
-  workSection.classList.add('push-in');
-  workSection.style.transition = 'none';
-  workSection.style.transform = 'translateY(100%)';
-  void workSection.offsetHeight;
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      workSection.style.transition = 'transform 1.3s cubic-bezier(0.76, 0, 0.24, 1)';
-      workSection.style.transform = 'translateY(0)';
-    });
-  });
-
-  let cleaned = false;
-  function cleanup() {
-    if (cleaned) return;
-    cleaned = true;
-
-    heroSection.classList.remove('active');
-    workSection.classList.remove('push-in');
-    workSection.classList.add('active');
-    workSection.style.transition = '';
-    workSection.style.transform = '';
-    workItems.forEach(item => { item.style.transition = ''; });
-
-    transitioning = false;
-    heroTriggered = false;
-    history.replaceState(null, '', '#archive');
-
-    if (window.setWorkReady) window.setWorkReady();
-
-    ['about'].forEach(id => {
-      document.querySelectorAll('#' + id + ' .reveal').forEach(el => el.classList.remove('visible'));
-    });
-  }
-
-  workSection.addEventListener('transitionend', function handler(e) {
-    if (e.target !== workSection || e.propertyName !== 'transform') return;
-    workSection.removeEventListener('transitionend', handler);
-    cleanup();
-  });
-  setTimeout(cleanup, 1500);
-}
-
-const workItems = document.querySelectorAll('#archive .work-item');
-const imgGroups = document.querySelectorAll('.work-img-group');
-const WORK_COUNT = workItems.length;
-let workIdx = 0;
-
-function setWorkActive(idx) {
-  document.querySelectorAll('.work-list .work-item').forEach(el => el.classList.remove('active'));
-  imgGroups.forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.work-list .work-item[data-index="' + idx + '"]').forEach(el => el.classList.add('active'));
-  if (imgGroups[idx]) imgGroups[idx].classList.add('active');
-  workIdx = idx;
-}
-
-(function () {
-  const container = document.querySelector('.work-left');
-  const list = document.querySelector('.work-list');
-  if (!container || !list) return;
-  const N = workItems.length;
-  if (N === 0) return;
-
-  container.style.overflow = 'hidden';
-  list.style.willChange = 'transform';
-
-  for (let pass = 0; pass < 2; pass++) {
-    workItems.forEach(item => {
-      const clone = item.cloneNode(true);
-      clone.classList.remove('active');
-      clone.style.opacity = '1';
-      clone.style.transform = 'translateY(0)';
-      list.appendChild(clone);
-    });
-  }
-
-  let position = 0;
-  let velocity = 0;
-  let loopH = 0;
-  let ready = false;
-  let activeIdx = -1;
-
-  function getCenter() {
-    const cs = getComputedStyle(container);
-    const padTop = parseFloat(cs.paddingTop) || 0;
-    const padBot = parseFloat(cs.paddingBottom) || 0;
-    return padTop + (container.clientHeight - padTop - padBot) / 2;
-  }
-
-  function findNearestItem() {
-    const allItems = [...list.querySelectorAll('.work-item')];
-    const center = getCenter();
-    let best = null, bestDist = Infinity;
-    for (const item of allItems) {
-      const screenY = item.offsetTop - position + item.offsetHeight / 2;
-      const d = Math.abs(screenY - center);
-      if (d < bestDist) { bestDist = d; best = item; }
-    }
-    return best;
-  }
-
-  function updateActive() {
-    const nearest = findNearestItem();
-    if (!nearest) return;
-    const idx = parseInt(nearest.dataset.index) % N;
-    if (idx !== activeIdx) { setWorkActive(idx); activeIdx = idx; }
-  }
-
-  function render() {
-    position = ((position % loopH) + loopH) % loopH;
-    list.style.transform = 'translate3d(0, ' + (-position) + 'px, 0)';
-    updateActive();
-  }
-
-  container.addEventListener('wheel', e => {
-    e.preventDefault();
-    if (!ready || loopH <= 0) return;
-    position += e.deltaY;
-    render();
-  }, { passive: false });
-
-  let touchActive = false, lastTouchY = 0, lastTouchT = 0, touchVel = 0;
-  container.addEventListener('touchstart', e => {
-    if (!ready) return;
-    touchActive = true;
-    lastTouchY = e.touches[0].clientY;
-    lastTouchT = performance.now();
-    touchVel = 0;
-    velocity = 0;
-  }, { passive: true });
-  container.addEventListener('touchmove', e => {
-    if (!ready || !touchActive || loopH <= 0) return;
-    e.preventDefault();
-    const y = e.touches[0].clientY;
-    const dy = lastTouchY - y;
-    const now = performance.now();
-    const dt = (now - lastTouchT) || 16;
-    touchVel = (dy / dt) * 16;
-    lastTouchY = y;
-    lastTouchT = now;
-    position += dy;
-    render();
-  }, { passive: false });
-  container.addEventListener('touchend', () => {
-    if (!touchActive) return;
-    touchActive = false;
-    velocity = Math.max(-60, Math.min(60, touchVel));
-  }, { passive: true });
-
-  window.addEventListener('keydown', e => {
-    if (activeSectionId() !== 'archive' || !ready || loopH <= 0) return;
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      position += (e.key === 'ArrowDown' ? 1 : -1) * (loopH / N);
-      render();
-    }
-  });
-
-  function tick() {
-    if (loopH > 0 && !touchActive && Math.abs(velocity) > 0.1 && activeSectionId() === 'archive') {
-      position += velocity;
-      velocity *= 0.92;
-      render();
-    }
-    requestAnimationFrame(tick);
-  }
-
-  let workInitialized = false;
-
-  function measureAndStart() {
-    if (workInitialized) return;
-    const allItems = [...list.querySelectorAll('.work-item')];
-    if (allItems.length === 0) return;
-
-    const workSection = document.getElementById('archive');
-    const wasHidden = !workSection.classList.contains('active');
-    if (wasHidden) {
-      workSection.style.visibility = 'visible';
-      workSection.style.position = 'absolute';
-    }
-
-    const cRect = container.getBoundingClientRect();
-    const origTop = allItems[0].getBoundingClientRect().top - cRect.top;
-    const cloneTop = allItems[N].getBoundingClientRect().top - cRect.top;
-    loopH = cloneTop - origTop;
-
-    const center = getCenter();
-    let best = null, bestDist = Infinity;
-    for (const it of allItems) {
-      const screenY = it.offsetTop + it.offsetHeight / 2;
-      const d = Math.abs(screenY - center);
-      if (d < bestDist) { bestDist = d; best = it; }
-    }
-    if (best) {
-      position = best.offsetTop + best.offsetHeight / 2 - center;
-      render();
-    }
-
-    if (wasHidden) {
-      workSection.style.visibility = '';
-      workSection.style.position = '';
-    }
-
-    workInitialized = true;
-    requestAnimationFrame(tick);
-  }
-
-  requestAnimationFrame(() => requestAnimationFrame(measureAndStart));
-
-  window.initWorkEntrance = function () { ready = true; };
-
-  window.setWorkReady = function () { ready = true; };
-})();
-
-function initWorkEntrance() {
-  if (window.initWorkEntrance) window.initWorkEntrance();
-}
-
 document.querySelectorAll('.nav-links a, .nav-monogram').forEach(link => {
   link.addEventListener('click', e => {
     const section = link.dataset.section;
@@ -1273,14 +1055,6 @@ document.querySelectorAll('.nav-links a, .nav-monogram').forEach(link => {
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
-  });
-});
-
-document.querySelectorAll('[data-nav="about"]').forEach(link => {
-  link.addEventListener('click', e => {
-    e.preventDefault();
-    if (transitioning) return;
-    if (activeSectionId() !== 'about') switchSection('about');
   });
 });
 
@@ -1309,30 +1083,6 @@ document.addEventListener('click', e => {
   }
   measure();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
-})();
-
-(function () {
-  const nav = document.getElementById('nav');
-
-  function bindScroll(el, dir, target) {
-    if (!el) return;
-    let acc = 0, lastTs = 0;
-    el.addEventListener('wheel', e => {
-      if (activeSectionId() !== 'archive' || transitioning) return;
-      const matches = dir === 'up' ? e.deltaY < 0 : e.deltaY > 0;
-      const now = performance.now();
-      if (now - lastTs > 300) acc = 0;
-      lastTs = now;
-      if (matches) {
-        acc += Math.abs(e.deltaY);
-        if (acc > 60) { acc = 0; switchSection(target); }
-      } else {
-        acc = 0;
-      }
-    }, { passive: true });
-  }
-
-  bindScroll(nav, 'up', 'hero');
 })();
 
 (function () {
