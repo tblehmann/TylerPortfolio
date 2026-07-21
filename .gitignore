@@ -1,4 +1,5 @@
 .DS_Store
+.idea/
 
 # asset-conversion build artifacts (not for the repo)
 .venv/
