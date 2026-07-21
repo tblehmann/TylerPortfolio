@@ -607,22 +607,60 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 #about {
   grid-column: 1 / -1;
   grid-row: 3;
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   justify-content: center;
   min-height: calc(100vh - var(--frame-top) - var(--frame-bottom));
-  padding: 80px var(--pad-x);
+  padding: clamp(72px, 12vh, 128px) var(--pad-x) clamp(40px, 6vh, 64px);
 }
 
-#about .section-header {
-  margin-bottom: 24px;
+/* Composed measure — the section reads as one titled block, left-anchored to the gutter,
+   rather than a full-bleed stretch. Header rule, body and colophon all share this edge. */
+.about-body,
+#about .legal-line {
+  width: 100%;
+  max-width: 1240px;
+  position: relative;
+  z-index: 1;
 }
 
-.about-grid {
+/* "About" set oversized and bold, anchored to the bottom-right corner and bleeding
+   slightly off the sheet edge — a large graphic label rather than a small eyebrow. */
+.about-head {
+  position: absolute;
+  right: calc(-1 * var(--pad-x));
+  bottom: 0;
+  margin: 0;
+  z-index: 0;
+  pointer-events: none;
+  line-height: 0.78;
+  transform: translate(2.5%, 24%);
+}
+.about-head .section-label {
+  font-family: var(--font-condensed);
+  font-size: clamp(5rem, 16vw, 18rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* Bio leads on the left; metadata sits as a two-part index on the right. */
+.about-body {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 72px;
-  margin-top: 32px;
+  grid-template-columns: minmax(0, 1.5fr) minmax(220px, 0.9fr);
+  column-gap: clamp(48px, 8vw, 132px);
+  align-items: start;
+  /* Bias the vertical centring upward so the content sits above the mid-line. */
+  margin-bottom: clamp(90px, 16vh, 190px);
+}
+
+.about-bio {
+  max-width: 34rem;
 }
 
 .about-bio p {
@@ -638,18 +676,35 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 }
 
 .about-bio.reveal {
-  transition-delay: 0.1s;
+  transition-delay: 0.08s;
 }
 
-.about-disciplines.reveal {
-  transition-delay: 0.2s;
+.about-meta {
+  display: flex;
+  flex-direction: column;
+}
+.about-meta.reveal {
+  transition-delay: 0.16s;
+}
+
+.about-block {
+  display: flex;
+  flex-direction: column;
+}
+.about-block + .about-block {
+  margin-top: clamp(28px, 4vh, 44px);
+  padding-top: clamp(28px, 4vh, 44px);
+  border-top: 1px solid var(--rule);
+}
+.about-block .edu-label {
+  margin-bottom: 18px;
 }
 
 .disciplines-list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .disciplines-list li {
@@ -668,9 +723,6 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 }
 
 .about-education {
-  margin-top: 48px;
-  padding-top: 32px;
-  border-top: 1px solid var(--rule);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -699,6 +751,19 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   line-height: 1.5;
   color: var(--muted);
   max-width: 720px;
+}
+
+/* Copyright colophon — pinned to the foot-left (out of flow so the body can centre),
+   kept short so its rule stays clear of the oversized "About" graphic in the corner. */
+#about .legal-line {
+  position: absolute;
+  left: var(--pad-x);
+  bottom: clamp(40px, 6vh, 64px);
+  max-width: 560px;
+  margin: 0;
+  padding-top: 0;
+  border-top: none;
+  z-index: 1;
 }
 
 #project-page .project-blurb-col {
@@ -871,12 +936,18 @@ footer {
   }
   #about {
     min-height: 0;
-    padding: 48px 0 40px;
+    padding: 48px 0 clamp(84px, 30vw, 150px);
     justify-content: flex-start;
   }
-  .about-grid {
+  .about-body {
     grid-template-columns: 1fr;
-    gap: 48px;
+    gap: 40px;
+  }
+  .about-meta {
+    gap: 0;
+  }
+  .about-head .section-label {
+    font-size: clamp(3.4rem, 21vw, 6.5rem);
   }
 
   footer {
