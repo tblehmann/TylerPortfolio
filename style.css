@@ -303,7 +303,10 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   grid-row: 1;
   min-height: calc(100vh - var(--frame-top) - var(--frame-bottom));
   display: flex;
-  align-items: center;
+  /* Top-aligned so the vertical position is explicit (centring only moved it by half
+     the padding). Lower this value to raise the intro further. */
+  align-items: flex-start;
+  padding-top: clamp(96px, 19vh, 265px);
 }
 
 .home-grid {
@@ -314,7 +317,8 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   flex-direction: column;
   gap: 20px;
   width: 80%;
-  padding: 40px 0 64px;
+  /* Clear white gap between the opening screen and the project cards. */
+  padding: clamp(135px, 22vh, 300px) 0 64px;
 }
 
 .home-grid .archive-card {
@@ -487,12 +491,12 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 .hero-intro {
   font-family: var(--font-condensed);
   font-weight: 400;
-  font-size: clamp(1.8rem, 2.9vw, 2.9rem);
+  font-size: clamp(2.5rem, 5vw, 5.3rem);
   line-height: 1.06;
   letter-spacing: 0;
   color: var(--text);
   margin-left: -0.02em;
-  max-width: 20em;
+  max-width: 15em;
 }
 
 .hero-role-accent {
@@ -612,9 +616,11 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
+  /* Top-aligned at the same offset as .home-intro so the About text starts at the
+     same height as the opening blurb. */
+  justify-content: flex-start;
   min-height: calc(100vh - var(--frame-top) - var(--frame-bottom));
-  padding: clamp(72px, 12vh, 128px) var(--pad-x) clamp(40px, 6vh, 64px);
+  padding: clamp(120px, 24vh, 330px) var(--pad-x) clamp(40px, 6vh, 64px);
 }
 
 /* Composed measure — the section reads as one titled block, left-anchored to the gutter,
@@ -660,12 +666,12 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 }
 
 .about-bio {
-  max-width: 34rem;
+  max-width: 47rem;
 }
 
 .about-bio p {
   font-family: var(--font-mono);
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   line-height: 1.9;
   color: var(--text);
   margin-bottom: 24px;
@@ -712,7 +718,7 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
   align-items: center;
   gap: 14px;
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   letter-spacing: 0.04em;
 }
 
@@ -738,7 +744,7 @@ nav#nav.nav-collapsed .nav-monogram .ml:not([data-keep]) {
 
 .edu-value {
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
 .legal-line {
@@ -854,8 +860,9 @@ footer {
     min-height: 0;
     display: block;
     margin-bottom: 26px;
+    padding-top: 0;
   }
-  .hero-intro { font-size: clamp(1.5rem, 5.6vw, 2.2rem); line-height: 1.2; }
+  .hero-intro { font-size: clamp(1.9rem, 7.2vw, 3rem); line-height: 1.1; }
   .hero-intro .mb { display: inline; }
   .hero-role-accent { white-space: nowrap; }
 
