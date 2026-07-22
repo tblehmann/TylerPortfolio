@@ -765,8 +765,7 @@ function pageProject(slug, dir) {
   back.addEventListener('click', e => {
     e.preventDefault();
     if (transitioning) return;
-    if (pushedCount > 0) history.back();
-    else switchSection(SECTIONS.includes(projectSourceSection) ? projectSourceSection : 'home');
+    if (activeSectionId() !== 'home') switchSection('home', { replace: true });
   });
 })();
 
