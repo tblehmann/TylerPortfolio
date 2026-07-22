@@ -3,11 +3,26 @@ const IS_MOBILE = window.matchMedia('(max-width: 768px)').matches;
 const IDLE_MS = .2 * 60 * 1000;
 const RAIN_FIELDS = {};
 
-const SECTIONS = ['home'];
+const SECTIONS = ['home', 'archive'];
 const PUSH_DURATION = 800;
 const PUSH_EASING = 'cubic-bezier(0.76, 0, 0.24, 1)';
 let transitioning = false;
 let projectSourceSection = 'home';
+
+// Browser-history routing: push a real entry on forward nav so Back/Forward work.
+let pushedCount = 0;
+function route(hash, opts) {
+  opts = opts || {};
+  if (opts.fromPop) return; // browser already changed the URL
+  try {
+    if (opts.replace) {
+      history.replaceState(null, '', '#' + hash);
+    } else {
+      history.pushState(null, '', '#' + hash);
+      pushedCount++;
+    }
+  } catch (e) { }
+}
 
 let dotGridRaf = null;
 let dotGridStart = null;
@@ -206,7 +221,7 @@ function switchSection(targetId, opts) {
     next.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
     updateNav(targetId);
     next.scrollTop = 0;
-    try { history.replaceState(null, '', '#' + targetId); } catch (e) { }
+    route(targetId, opts);
     onSectionEnter(targetId);
     return;
   }
@@ -289,7 +304,7 @@ function switchSection(targetId, opts) {
     red.style.cssText = 'visibility:hidden;opacity:0;';
 
     transitioning = false;
-    try { history.replaceState(null, '', '#' + targetId); } catch (e) { }
+    route(targetId, opts);
     onSectionEnter(targetId);
   }
 
@@ -583,7 +598,7 @@ function openProject(slug, opts) {
     section.scrollTop = 0;
     updateNav('project-page');
     onSectionEnter('project-page');
-    try { history.replaceState(null, '', '#' + slug); } catch (e) { }
+    route(slug, opts);
     if (pendingHeroVideo) {
       const p = pendingHeroVideo.play();
       if (p && typeof p.catch === 'function') p.catch(() => { });
@@ -634,7 +649,7 @@ function openProject(slug, opts) {
 
     onSectionEnter('project-page');
     transitioning = false;
-    try { history.replaceState(null, '', '#' + slug); } catch (e) { }
+    route(slug, opts);
 
     if (pendingHeroVideo) {
       const p = pendingHeroVideo.play();
@@ -750,7 +765,8 @@ function pageProject(slug, dir) {
   back.addEventListener('click', e => {
     e.preventDefault();
     if (transitioning) return;
-    switchSection('home');
+    if (pushedCount > 0) history.back();
+    else switchSection(SECTIONS.includes(projectSourceSection) ? projectSourceSection : 'home');
   });
 })();
 
@@ -786,6 +802,10 @@ function onSectionEnter(sectionId) {
     if (dotGridStart) dotGridStart();
   } else {
     if (dotGridStop) dotGridStop();
+  }
+
+  if (sectionId === 'archive') {
+    initWorkEntrance();
   }
 
   if (sectionId !== 'project-page') {
@@ -1040,11 +1060,191 @@ if (canvas && !IS_MOBILE) {
   setTimeout(() => { tiles.forEach(t => { t.style.transitionDelay = '0s'; }); }, 1200);
 })();
 
+// Archive infinite-scroll engine
+const workItems = document.querySelectorAll('#archive .work-item');
+const imgGroups = document.querySelectorAll('.work-img-group');
+const WORK_COUNT = workItems.length;
+let workIdx = 0;
+
+function setWorkActive(idx) {
+  document.querySelectorAll('.work-list .work-item').forEach(el => el.classList.remove('active'));
+  imgGroups.forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.work-list .work-item[data-index="' + idx + '"]').forEach(el => el.classList.add('active'));
+  if (imgGroups[idx]) imgGroups[idx].classList.add('active');
+  workIdx = idx;
+}
+
+(function () {
+  const container = document.querySelector('.work-left');
+  const list = document.querySelector('.work-list');
+  if (!container || !list) return;
+  const N = workItems.length;
+  if (N === 0) return;
+
+  container.style.overflow = 'hidden';
+  list.style.willChange = 'transform';
+
+  for (let pass = 0; pass < 2; pass++) {
+    workItems.forEach(item => {
+      const clone = item.cloneNode(true);
+      clone.classList.remove('active');
+      clone.style.opacity = '1';
+      clone.style.transform = 'translateY(0)';
+      list.appendChild(clone);
+    });
+  }
+
+  let position = 0;
+  let velocity = 0;
+  let loopH = 0;
+  let ready = false;
+  let activeIdx = -1;
+
+  function getCenter() {
+    const cs = getComputedStyle(container);
+    const padTop = parseFloat(cs.paddingTop) || 0;
+    const padBot = parseFloat(cs.paddingBottom) || 0;
+    return padTop + (container.clientHeight - padTop - padBot) / 2;
+  }
+
+  function findNearestItem() {
+    const allItems = [...list.querySelectorAll('.work-item')];
+    const center = getCenter();
+    let best = null, bestDist = Infinity;
+    for (const item of allItems) {
+      const screenY = item.offsetTop - position + item.offsetHeight / 2;
+      const d = Math.abs(screenY - center);
+      if (d < bestDist) { bestDist = d; best = item; }
+    }
+    return best;
+  }
+
+  function updateActive() {
+    const nearest = findNearestItem();
+    if (!nearest) return;
+    const idx = parseInt(nearest.dataset.index) % N;
+    if (idx !== activeIdx) { setWorkActive(idx); activeIdx = idx; }
+  }
+
+  function render() {
+    position = ((position % loopH) + loopH) % loopH;
+    list.style.transform = 'translate3d(0, ' + (-position) + 'px, 0)';
+    updateActive();
+  }
+
+  container.addEventListener('wheel', e => {
+    e.preventDefault();
+    if (!ready || loopH <= 0) return;
+    position += e.deltaY;
+    render();
+  }, { passive: false });
+
+  let touchActive = false, lastTouchY = 0, lastTouchT = 0, touchVel = 0;
+  container.addEventListener('touchstart', e => {
+    if (!ready) return;
+    touchActive = true;
+    lastTouchY = e.touches[0].clientY;
+    lastTouchT = performance.now();
+    touchVel = 0;
+    velocity = 0;
+  }, { passive: true });
+  container.addEventListener('touchmove', e => {
+    if (!ready || !touchActive || loopH <= 0) return;
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    const dy = lastTouchY - y;
+    const now = performance.now();
+    const dt = (now - lastTouchT) || 16;
+    touchVel = (dy / dt) * 16;
+    lastTouchY = y;
+    lastTouchT = now;
+    position += dy;
+    render();
+  }, { passive: false });
+  container.addEventListener('touchend', () => {
+    if (!touchActive) return;
+    touchActive = false;
+    velocity = Math.max(-60, Math.min(60, touchVel));
+  }, { passive: true });
+
+  window.addEventListener('keydown', e => {
+    if (activeSectionId() !== 'archive' || !ready || loopH <= 0) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      position += (e.key === 'ArrowDown' ? 1 : -1) * (loopH / N);
+      render();
+    }
+  });
+
+  function tick() {
+    if (loopH > 0 && !touchActive && Math.abs(velocity) > 0.1 && activeSectionId() === 'archive') {
+      position += velocity;
+      velocity *= 0.92;
+      render();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  let workInitialized = false;
+
+  function measureAndStart() {
+    if (workInitialized) return;
+    const allItems = [...list.querySelectorAll('.work-item')];
+    if (allItems.length === 0) return;
+
+    const workSection = document.getElementById('archive');
+    const wasHidden = !workSection.classList.contains('active');
+    if (wasHidden) {
+      workSection.style.visibility = 'visible';
+      workSection.style.position = 'absolute';
+    }
+
+    const cRect = container.getBoundingClientRect();
+    const origTop = allItems[0].getBoundingClientRect().top - cRect.top;
+    const cloneTop = allItems[N].getBoundingClientRect().top - cRect.top;
+    loopH = cloneTop - origTop;
+
+    const center = getCenter();
+    let best = null, bestDist = Infinity;
+    for (const it of allItems) {
+      const screenY = it.offsetTop + it.offsetHeight / 2;
+      const d = Math.abs(screenY - center);
+      if (d < bestDist) { bestDist = d; best = it; }
+    }
+    if (best) {
+      position = best.offsetTop + best.offsetHeight / 2 - center;
+      render();
+    }
+
+    if (wasHidden) {
+      workSection.style.visibility = '';
+      workSection.style.position = '';
+    }
+
+    workInitialized = true;
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(() => requestAnimationFrame(measureAndStart));
+
+  window.initWorkEntrance = function () { ready = true; };
+
+  window.setWorkReady = function () { ready = true; };
+})();
+
+function initWorkEntrance() {
+  if (window.initWorkEntrance) window.initWorkEntrance();
+}
+
 document.querySelectorAll('.nav-links a, .nav-monogram').forEach(link => {
   link.addEventListener('click', e => {
     const section = link.dataset.section;
     if (!section) return;
     e.preventDefault();
+    if (section === 'archive') {
+      if (activeSectionId() !== 'archive') switchSection('archive');
+      return;
+    }
     const home = document.getElementById('home');
     if (activeSectionId() !== 'home') switchSection('home');
     requestAnimationFrame(() => {
@@ -1061,13 +1261,14 @@ document.querySelectorAll('.nav-links a, .nav-monogram').forEach(link => {
 document.addEventListener('click', e => {
   const trigger = e.target.closest && e.target.closest('[data-project]');
   if (!trigger) return;
-  if (!trigger.closest('#home')) return;
+  const fromArchive = !!trigger.closest('#archive');
+  if (!trigger.closest('#home') && !fromArchive) return;
   const slug = trigger.dataset.project;
   if (!slug || !PROJECTS[slug]) return;
   e.preventDefault();
   if (transitioning) return;
 
-  projectSourceSection = 'home';
+  projectSourceSection = fromArchive ? 'archive' : 'home';
   openProject(slug, {});
 });
 
@@ -1085,18 +1286,39 @@ document.addEventListener('click', e => {
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
 })();
 
-(function () {
+// Show the view described by the current URL hash. fromPop=true when driven by
+// the browser Back/Forward arrows (the URL is already set, so don't re-push).
+function applyRoute(fromPop) {
   const hash = location.hash.replace('#', '');
   if (hash && PROJECTS[hash]) {
-    openProject(hash);
+    if (currentProjectSlug !== hash || activeSectionId() !== 'project-page') {
+      openProject(hash, { fromPop: fromPop });
+    }
+  } else if (hash === 'archive') {
+    if (activeSectionId() !== 'archive') switchSection('archive', { fromPop: fromPop });
   } else if (hash === 'work' || hash === 'about') {
+    if (activeSectionId() !== 'home') switchSection('home', { fromPop: fromPop });
     const target = document.getElementById(hash);
     if (target) requestAnimationFrame(() => target.scrollIntoView({ block: 'start' }));
-    setNavActive('home');
   } else {
-    setNavActive('home');
+    if (activeSectionId() !== 'home') switchSection('home', { fromPop: fromPop });
+    else setNavActive('home');
   }
+}
+
+(function () {
+  const hash = location.hash.replace('#', '');
+  // Deep link straight into a project/archive: seed Home as the base entry so
+  // Back returns Home instead of leaving the site.
+  const isDeep = (hash && PROJECTS[hash]) || hash === 'archive';
+  if (isDeep) {
+    try { history.replaceState(null, '', '#home'); } catch (e) { }
+    try { history.pushState(null, '', '#' + hash); pushedCount++; } catch (e) { }
+  }
+  applyRoute(true);
 })();
+
+window.addEventListener('popstate', () => applyRoute(true));
 
 const observer = new IntersectionObserver(entries => {
   entries.forEach(entry => {
@@ -1262,7 +1484,7 @@ function makeRainField(canvas) {
   };
 }
 
-['project-page'].forEach(id => {
+['archive', 'project-page'].forEach(id => {
   const section = document.getElementById(id);
   const field = makeRainField(section && section.querySelector('.rain-canvas'));
   if (field) RAIN_FIELDS[id] = field;
